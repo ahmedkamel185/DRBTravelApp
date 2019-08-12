@@ -1,5 +1,7 @@
 <?php
 
+use App\User;
+
 return [
 
     /*
@@ -40,7 +42,14 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
-
+        'publisher' => [
+            'driver' => 'session',
+            'provider' => 'publishers',
+        ],
+        'store' => [
+            'driver' => 'session',
+            'provider' => 'stores',
+        ],
         'api' => [
             'driver' => 'token',
             'provider' => 'users',
@@ -70,6 +79,14 @@ return [
             'driver' => 'eloquent',
             'model' => App\User::class,
         ],
+        'publishers' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Publisher::class,
+        ],
+        'stores' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Store::class,
+        ],
 
         // 'users' => [
         //     'driver' => 'database',
@@ -95,6 +112,16 @@ return [
     'passwords' => [
         'users' => [
             'provider' => 'users',
+            'table' => 'password_resets',
+            'expire' => 60,
+        ],
+        'publishers' => [
+            'provider' => 'publishers',
+            'table' => 'password_resets',
+            'expire' => 60,
+        ],
+        'store_owners' => [
+            'provider' => 'store_owners',
             'table' => 'password_resets',
             'expire' => 60,
         ],
