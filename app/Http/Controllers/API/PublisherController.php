@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\API;
 
+use function foo\func;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use URL;
 use Image;
 use Validator;
 use App\Models\Publisher as User;
+use App\Models\Block ;
+use App\Models\Follower;
 use File;
 
 class PublisherController extends Controller
@@ -21,11 +24,26 @@ class PublisherController extends Controller
      * @optional take add flage to return valdation for add or edit
      * @return arry of valdation
      * */
-    protected function publisherValidationAdd($publisher)
+    //activity response
+    protected function reponseActivity($activity)
     {
-
+        $publiser                = $activity->publisher;
+        $res['publisher']        = $this->responsePublisherUser($publiser);
+        $res['event_ar']         = $activity->event_ar;
+        $res['event_en']         = $activity->event_en;
+        $res['created_at']       = $activity->created_at->format('d-m-Y h:i a');
+        return $res;
     }
 
+    protected function responsePublisherUser($user){
+        $res["id"]              = $user->id;
+        $res["username"]        = $user->username;
+        $res["display_name"]    = $user->display_name;
+        $image                  = is_null($user['image'])? "default_image.png" : $user['image'];
+        $res['image']           = asset('uploads/publishers') . '/' . $image;
+        $res['type']            = 1;
+        return $res;
+    }
     //response user
     protected function responseUser($user, $type=1)
     {
@@ -40,10 +58,21 @@ class PublisherController extends Controller
         $res['image']           = asset('uploads/publishers') . '/' . $image;
         $res['status']          = is_null($user['status'])?1:$user['status'];
         $res['verified']        = is_null($user['verified'])?1:$user['verified'];
-
+        $res['follow']          = $user->follows()->count();
+        $res['follower']        = $user->followers()->count();
+        $res['type']            = 1;
         return $res;
     }
 
+    //response block
+    protected  function responseBlock($block)
+    {
+        $res['id']          = $block['id'];
+        $res['publisher']   = $this->responsePublisherUser($block->publisher);
+        $res['created_at']  = $block->created_at->format('d-m-Y h:i a');
+        return $res;
+
+    }
     /*===========================*/
 
     // sign in
@@ -75,7 +104,7 @@ class PublisherController extends Controller
             $user->save();
             return response()->json(
                     [
-                        'key' => 'success',
+                        
                         'status' => true,
                         'data' => ['publisher'=>$this->responseUser($user)],
                         'msg'=>""
@@ -84,7 +113,7 @@ class PublisherController extends Controller
         }else{
             foreach ((array)$validator->errors() as $key => $value){
                 foreach ($value as $msg){
-                    return response()->json(['key' => 'fail','status' => false, 'msg' => $msg[0]]);
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
         }
@@ -103,23 +132,23 @@ class PublisherController extends Controller
          if ($validator->passes()) {
              if(! auth('publisher')->attempt( ['email'=> convert2english($request['email']) ,'password' => convert2english($request['password'] ) ])){
                  $msg = $request['lang'] == 'ar' ? ' كلمه المرور او الاميل غير صحيح.' : ' password or email is wrong.';
-                 return response()->json(['key'=>'fail','status'=> false,'msg'=>$msg]);
+                 return response()->json(['status'=> false,'msg'=>$msg]);
              }
              $user = auth('publisher')->user();
 
              if($user->verified == 0){
                  $msg = $request['lang'] == 'ar' ? 'لم يتم تاكيد الحساب بعد.' : 'account not verfied .';
-                 return response()->json(['key'=>'fail','status'=>false,'msg'=>$msg]);
+                 return response()->json(['status'=>false,'msg'=>$msg]);
              }
 
              if($user->status == 0){
                  $msg = $request['lang'] == 'ar' ? 'المستخدم محظور حاليا يمكن التواصل مع الاداره.' : ' user has been blocked can contact with adminstration.';
-                 return response()->json(['key'=>'fail','status'=>false,'msg'=>$msg]);
+                 return response()->json(['status'=>false,'msg'=>$msg]);
              }
 
              return response()->json(
                  [
-                     'key' => 'success',
+                     
                      'status' => true,
                      'data' => ['publisher' => $this->responseUser($user)],
                      'msg'=>""
@@ -130,7 +159,7 @@ class PublisherController extends Controller
          }else{
              foreach ((array)$validator->errors() as $key => $value){
                  foreach ($value as $msg){
-                     return response()->json(['key' => 'fail','status' => false, 'msg' => $msg[0]]);
+                     return response()->json(['status' => false, 'msg' => $msg[0]]);
                  }
              }
          }
@@ -145,7 +174,7 @@ class PublisherController extends Controller
              $user     = User::find($request['user_id']);
              return response()->json(
                  [
-                     'key' => 'success',
+                     
                      'status' => true,
                      'data' => ['publisher'=>$this->responseUser($user)],
                      'msg'=>""
@@ -156,7 +185,7 @@ class PublisherController extends Controller
          }else{
              foreach ((array)$validator->errors() as $key => $value){
                  foreach ($value as $msg){
-                     return response()->json(['key' => 'fail','status' => false, 'msg' => $msg[0]]);
+                     return response()->json(['status' => false, 'msg' => $msg[0]]);
                  }
              }
          }
@@ -213,7 +242,7 @@ class PublisherController extends Controller
         }else{
             foreach ((array)$validator->errors() as $key => $value){
                 foreach ($value as $msg){
-                    return response()->json(['key' => 'fail','status' => false, 'msg' => $msg[0]]);
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
         }
@@ -241,16 +270,16 @@ class PublisherController extends Controller
                 $user->save();
                 $arr['id'] = $user['id'];
                 $msg = $request['lang'] == 'ar' ? 'تم تغير كلمة السر بنجاح ':" password change successfull";
-                return response()->json(['key' => 'success', 'status' => true, 'data' => "", 'msg' => $msg]);
+                return response()->json([ 'status' => true, 'data' => "", 'msg' => $msg]);
             }else
             {
                 $msg = $request['lang'] == 'ar' ? 'رقم السرى القديم غير صحيح ':"old password not correct";
-                return response()->json(['key'=>'fail','status'=>false,'msg'=>$msg]);
+                return response()->json(['status'=>false,'msg'=>$msg]);
             }
         }else{
             foreach ((array)$validator->errors() as $key => $value){
                 foreach ($value as $msg){
-                    return response()->json(['key' => 'fail','status' => false, 'msg' => $msg[0]]);
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
         }
@@ -271,11 +300,209 @@ class PublisherController extends Controller
             $user["lang"]=$lang;
             $user->update();
             $msg = $lang=="ar"?"تم تغير اللغه بنجاح":"sucessfull change the langue";
-            return response()->json(['key'=>'success','status'=>true,'data' => "", 'msg' => $msg]);
+            return response()->json(['status'=>true,'data' => "", 'msg' => $msg]);
         }else{
             foreach ((array)$validator->errors() as $key => $value){
                 foreach ($value as $msg){
-                    return response()->json(['key' => 'fail','status' => false, 'msg' => $msg[0]]);
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+
+    // chnage langue
+    public function logActivity(Request $request)
+    {
+        $validator=Validator::make($request->all(),[
+            'user_id'   =>"required|exists:publishers,id",
+        ]);
+
+        if ($validator->passes()) {
+            $lang    = $request['lang'];
+            $user    = User::find($request["user_id"]);
+            $data    = $user->logs->map(function ($log){
+               return $this->reponseActivity($log);
+            });
+            return response()->json(['status'=>true,'data' => ["activites"=>$data], 'msg' => ""]);
+        }else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+
+    // delete all logs
+    public function deleteLogActivity(Request $request)
+    {
+        $validator=Validator::make($request->all(),[
+            'user_id'   =>"required|exists:publishers,id",
+        ]);
+
+        if ($validator->passes()) {
+            $lang    = $request['lang'];
+            $user    = User::find($request["user_id"]);
+            $user->logs()->delete();
+            $msg     = $lang=="ar"?"تم الحذف بنجاح":"sucessfull delete the date";
+            return response()->json(['status'=>true,'data' => ["activites"=>""], 'msg' => $msg]);
+        }else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+
+    // block action
+    public function blockAction(Request $request)
+    {
+        $validator=Validator::make($request->all(),[
+            'user_id'        =>"required|exists:publishers,id",
+            'publisher_id'   =>"required|exists:publishers,id",
+        ]);
+
+        if ($validator->passes()) {
+            $lang    = $request['lang'];
+            if($request['user_id'] == $request['publisher_id']){
+                $msg     = $lang=="ar"?"لايمكن حظر نفسك":"can\'t block your self";
+                return response()->json(['status'=>false,'data' => ["blocks"=>""], 'msg' => $msg]);
+            }
+            $block   = Block::where('user_id', $request['user_id'])
+                            ->where('publisher_id', $request['publisher_id'])->first();
+            if($block){
+                $block->delete();
+                $msg     = $lang=="ar"?"تم حذف الحظر بنجاح":"sucessfull delete blocked";
+            } else{
+                $block                = new Block;
+                $block->user_id       = $request['user_id'];
+                $block->publisher_id  = $request['publisher_id'];
+                $block->save();
+                $msg                  = $lang=="ar"?"تم  الحظر بنجاح":"sucessfull blocked";
+                publisher_log(
+                    $request['user_id'],
+                    ' لقد قمت بحظر  '.$block->publisher->display_name,
+                    'you  blocked '.$block->publisher->display_name
+                );
+            }
+
+            return response()->json(['status'=>true,'data' => ["blocks"=>""], 'msg' => $msg]);
+        }else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+
+    // block-list
+    public function block_list(Request $request)
+    {
+        $validator=Validator::make($request->all(),[
+            'user_id'   =>"required|exists:publishers,id",
+        ]);
+
+        if ($validator->passes()) {
+            $lang    = $request['lang'];
+            $user    = User::find($request['user_id']);
+            $data    = $user->blockers->map(function ($blocker){
+                return $this->responseBlock($blocker);
+            });
+            return response()->json(['status'=>true,'data' => ["blocks"=>$data], 'msg' => ""]);
+        }else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+
+    // follow action
+    public function followAction(Request $request)
+    {
+        $validator=Validator::make($request->all(),[
+            'user_id'        =>"required|exists:publishers,id",
+            'publisher_id'   =>"required|exists:publishers,id",
+        ]);
+
+        if ($validator->passes()) {
+            $lang    = $request['lang'];
+            if($request['user_id'] == $request['publisher_id']){
+                $msg     = $lang=="ar"?"لايمكن تبع نفسك":"can\'t follow your self";
+                return response()->json(['status'=>false,'data' => ["blocks"=>""], 'msg' => $msg]);
+            }
+            $follow   = Follower::where('follower_id', $request['user_id'])
+                ->where('follow_id', $request['publisher_id'])->first();
+            if($follow){
+                $follow->delete();
+                $msg     = $lang=="ar"?"تم حذف التتبع بنجاح":"sucessfull delete follow";
+            } else{
+                $follow                = new Follower;
+                $follow->follower_id   = $request['user_id'];
+                $follow->follow_id    = $request['publisher_id'];
+                $follow->save();
+                $msg                  = $lang=="ar"?"تم  التتبع بنجاح":"sucessfull follow";
+                publisher_log(
+                    $request['user_id'],
+                    ' لقد قمت تتبع  '.$follow->follow->display_name,
+                    'you  follow  '.$follow->follow->display_name
+                );
+            }
+
+            return response()->json(['status'=>true,'data' => ["follows"=>""], 'msg' => $msg]);
+        }else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+
+    // follow-list
+    public function follow_list(Request $request)
+    {
+        $validator=Validator::make($request->all(),[
+            'user_id'   =>"required|exists:publishers,id",
+        ]);
+
+        if ($validator->passes()) {
+            $lang    = $request['lang'];
+            $user    = User::find($request['user_id']);
+            $data    = $user->follows->map(function ($blocker){
+                return $this->responseBlock($blocker);
+            });
+            return response()->json(['status'=>true,'data' => ["follows"=>$data], 'msg' => ""]);
+        }else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+
+    // follower-list
+    public function follower_list(Request $request)
+    {
+        $validator=Validator::make($request->all(),[
+            'user_id'   =>"required|exists:publishers,id",
+        ]);
+
+        if ($validator->passes()) {
+            $lang    = $request['lang'];
+            $user    = User::find($request['user_id']);
+            $data    = $user->followers->map(function ($blocker){
+                return $this->responseBlock($blocker);
+            });
+            return response()->json(['status'=>true,'data' => ["followers"=>$data], 'msg' => ""]);
+        }else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
         }

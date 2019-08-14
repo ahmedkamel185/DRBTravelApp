@@ -66,7 +66,8 @@ class StoreController extends Controller
             'store_type_id'    => 'required|exists:store_types,id',
             'password'         => 'required|min:6|max:190',
             'device_id'        => 'required',
-            'device_type'      => 'required|in:ios,android'
+            'device_type'      => 'required|in:ios,android',
+            'address'          => 'required'
         ]);
         if ($validator->passes()) {
             $user               = new User;
@@ -78,10 +79,11 @@ class StoreController extends Controller
             $user->device_id    = $request['device_id'];
             $user->device_type  = $request['device_type'];
             $user->store_type_id= $request['store_type_id'] ;
+            $user->address      = $request['address'] ;
             $user->save();
             return response()->json(
                 [
-                    'key' => 'success',
+                    
                     'status' => true,
                     'data' => ['store'=>$this->responseUser($user)],
                     'msg'=>""
@@ -90,7 +92,7 @@ class StoreController extends Controller
         }else{
             foreach ((array)$validator->errors() as $key => $value){
                 foreach ($value as $msg){
-                    return response()->json(['key' => 'fail','status' => false, 'msg' => $msg[0]]);
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
         }
@@ -109,23 +111,23 @@ class StoreController extends Controller
         if ($validator->passes()) {
             if(! auth('store')->attempt( ['email'=> convert2english($request['email']) ,'password' => convert2english($request['password'] ) ])){
                 $msg = $request['lang'] == 'ar' ? ' كلمه المرور او الاميل غير صحيح.' : ' password or email is wrong.';
-                return response()->json(['key'=>'fail','status'=>false,'msg'=>$msg]);
+                return response()->json(['status'=>false,'msg'=>$msg]);
             }
             $user = auth('store')->user();
 
             if($user->verified == 0){
                 $msg = $request['lang'] == 'ar' ? 'لم يتم تاكيد الحساب بعد.' : 'account not verfied .';
-                return response()->json(['key'=>'fail','status'=>false,'msg'=>$msg]);
+                return response()->json(['status'=>false,'msg'=>$msg]);
             }
 
             if($user->status == 0){
                 $msg = $request['lang'] == 'ar' ? 'المستخدم محظور حاليا يمكن التواصل مع الاداره.' : ' user has been blocked can contact with adminstration.';
-                return response()->json(['key'=>'fail','status'=>false,'msg'=>$msg]);
+                return response()->json(['status'=>false,'msg'=>$msg]);
             }
 
             return response()->json(
                 [
-                    'key' => 'success',
+                    
                     'status' => true,
                     'data' => ['store'=>$this->responseUser($user)],
                     'msg'=>""
@@ -136,7 +138,7 @@ class StoreController extends Controller
         }else{
             foreach ((array)$validator->errors() as $key => $value){
                 foreach ($value as $msg){
-                    return response()->json(['key' => 'fail','status' => false, 'msg' => $msg[0]]);
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
         }
@@ -152,7 +154,7 @@ class StoreController extends Controller
 
             return response()->json(
                 [
-                    'key' => 'success',
+                    
                     'status' => true,
                     'data' => ['store'=>$this->responseUser($user)],
                     'msg'=>""
@@ -163,7 +165,7 @@ class StoreController extends Controller
         }else{
             foreach ((array)$validator->errors() as $key => $value){
                 foreach ($value as $msg){
-                    return response()->json(['key' => 'fail','status' => false, 'msg' => $msg[0]]);
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
         }
@@ -180,6 +182,7 @@ class StoreController extends Controller
             'mobile'           => 'required|min:2|max:190|unique:stores,mobile,'.$request['user_id'],
             'email'            => 'required|email|min:2|max:190|unique:stores,email,'.$request['user_id'],
             'city'             => 'required|min:2|max:190',
+            'address'          => 'required|min:2|max:190',
 
         ]);
 
@@ -190,6 +193,7 @@ class StoreController extends Controller
             $user->mobile       = $request['mobile'];
             $user->email        = convert2english($request['email']);
             $user->city         = $request['city'];
+            $user->address      = $request['address'];
             $user->store_type_id= $request['store_type_id'] ;
             if($request['image'])
             {
@@ -207,7 +211,6 @@ class StoreController extends Controller
             $msg = $request['lang'] == 'ar' ? 'تم تعديل الحساب' : 'account update .';
             return response()->json(
                 [
-                    'key'   => 'success',
                     'status' => true,
                     'data'  => "",
                     'msg'   => $msg
@@ -218,7 +221,7 @@ class StoreController extends Controller
         }else{
             foreach ((array)$validator->errors() as $key => $value){
                 foreach ($value as $msg){
-                    return response()->json(['key' => 'fail','status' => false, 'msg' => $msg[0]]);
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
         }
@@ -246,16 +249,16 @@ class StoreController extends Controller
                 $user->save();
                 $arr['id'] = $user['id'];
                 $msg = $request['lang'] == 'ar' ? 'تم تغير كلمة السر بنجاح ':" password change successfull";
-                return response()->json(['key' => 'success', 'status' => true, 'data' => "", 'msg' => $msg]);
+                return response()->json(['data' => "", 'msg' => $msg]);
             }else
             {
                 $msg = $request['lang'] == 'ar' ? 'رقم السرى القديم غير صحيح ':"old password not correct";
-                return response()->json(['key'=>'fail','status'=>false,'msg'=>$msg]);
+                return response()->json(['status'=>false,'msg'=>$msg]);
             }
         }else{
             foreach ((array)$validator->errors() as $key => $value){
                 foreach ($value as $msg){
-                    return response()->json(['key' => 'fail','status' => false, 'msg' => $msg[0]]);
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
         }
@@ -276,11 +279,11 @@ class StoreController extends Controller
             $user["lang"]=$lang;
             $user->update();
             $msg = $lang=="ar"?"تم تغير اللغه بنجاح":"sucessfull change the langue";
-            return response()->json(['key'=>'success','status'=>true,'data'=>$msg]);
+            return response()->json(['status'=>true,'data'=>$msg]);
         }else{
             foreach ((array)$validator->errors() as $key => $value){
                 foreach ($value as $msg){
-                    return response()->json(['key' => 'fail','status' => false, 'msg' => $msg[0]]);
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
         }
@@ -298,7 +301,7 @@ class StoreController extends Controller
 
         $this->sendEmail($request->email);
 //        $msg = $request['lang'] == 'ar' ? 'تم ارسال الايميل بنجاح .':"Email sent successfully.";
-//        return response()->json(['key' => 'success','value' => '1', 'msg' => $msg[0]]);
+//        return response()->json(['value' => '1', 'msg' => $msg[0]]);
         return response()->json('done',200);
 
 

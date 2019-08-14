@@ -32,7 +32,7 @@ class BasicInfoController extends Controller
         });
         return response()->json(
             [
-                'key' => 'success',
+                
                 'status' => true,
                 'data' => ['store-type'  =>  $data],
                 'msg'=>""
@@ -40,4 +40,5 @@ class BasicInfoController extends Controller
         );
 
     }
+
 }

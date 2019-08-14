@@ -16,6 +16,7 @@ class CreatePublishingsTable extends Migration
         Schema::create('publishings', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->integer('status')->unsigned()->default(1);
+            $table->integer('block')->unsigned()->default(0);
             $table->enum('privacy',['public','private','flowers'])->default('public');
             $table->enum('type',['publisher','share'])->default('publisher');
             $table->bigInteger('publisher_id')->unsigned();

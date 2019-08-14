@@ -15,8 +15,7 @@ class CreateRiskCommentsTable extends Migration
     {
         Schema::create('risk_comments', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->integer('yes');
-            $table->integer('no');
+            $table->enum('vote', ['yes','no']);
             $table->bigInteger('publisher_id')->unsigned();
             $table->foreign('publisher_id')->references('id')->on('publishers')->onDelete('cascade');
             $table->bigInteger('risk_id')->unsigned();

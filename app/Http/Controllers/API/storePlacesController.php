@@ -40,7 +40,6 @@ class storePlacesController extends Controller
             });
             return response()->json(
                 [
-                    'key' => 'success',
                     'status' => true,
                     'data' => ['store-places' => $data],
                     'msg' => ""
@@ -49,7 +48,7 @@ class storePlacesController extends Controller
         } else {
             foreach ((array)$validator->errors() as $key => $value) {
                 foreach ($value as $msg) {
-                    return response()->json(['key' => 'fail', 'status' => false, 'msg' => $msg[0]]);
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
         }
@@ -87,7 +86,6 @@ class storePlacesController extends Controller
             $msg = $request['lang'] == 'ar' ? ' تم اضافه مكان جديد.' : ' store place added successfully.';
             return response()->json(
                 [
-                    'key' => 'success',
                     'status' => true,
                     'data' => ['storePlace'=>$storePlace->id],
                     'msg'=>$msg
@@ -96,7 +94,7 @@ class storePlacesController extends Controller
         }else{
             foreach ((array)$validator->errors() as $key => $value){
                 foreach ($value as $msg){
-                    return response()->json(['key' => 'fail','status' => false, 'msg' => $msg[0]]);
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
         }
@@ -142,7 +140,6 @@ class storePlacesController extends Controller
             $msg = $request['lang'] == 'ar' ? 'تم تعديل المكان' : 'Store updated .';
             return response()->json(
                 [
-                    'key'   => 'success',
                     'status' => true,
                     'data'  => "",
                     'msg'   => $msg
@@ -153,7 +150,7 @@ class storePlacesController extends Controller
         }else{
             foreach ((array)$validator->errors() as $key => $value){
                 foreach ($value as $msg){
-                    return response()->json(['key' => 'fail','status' => false, 'msg' => $msg[0]]);
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
         }
@@ -181,12 +178,12 @@ class storePlacesController extends Controller
 
             $store_place->delete();
             $msg = $request['lang'] == 'ar' ? 'تم حذف المكان' : " Place Delete success";
-            return response()->json(['key' => 'success', 'status' => true, 'data' => "", 'msg' => $msg]);
+            return response()->json(['status' => true, 'data' => "", 'msg' => $msg]);
 
 
         } else {
             $msg = $request['lang'] == 'ar' ? 'حدث خطا ' : "Something error";
-            return response()->json(['key' => 'fail', 'status' => false, 'msg' => $msg]);
+            return response()->json(['status' => false, 'msg' => $msg]);
         }
 
     }

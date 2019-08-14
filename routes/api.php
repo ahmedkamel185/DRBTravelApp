@@ -42,6 +42,21 @@ Route::group( [
 
     Route::post('change-lang','PublisherController@changeLang');
 
+    Route::post('get-logs','PublisherController@logActivity');
+
+    Route::post('delete-logs','PublisherController@deleteLogActivity');
+
+    Route::post('action-block','PublisherController@blockAction');
+
+    Route::post('block-list','PublisherController@block_list');
+
+    Route::post('action-follow','PublisherController@followAction');
+
+    Route::post('follows-list','PublisherController@follow_list');
+
+    Route::post('followers-list','PublisherController@follower_list');
+
+
 
 });
 
@@ -163,6 +178,39 @@ Route::group( [
     Route::post('get-publishing', 'TripController@getPublishing');
 
     Route::post('delete-share', 'TripController@deleteShare');
+
+    Route::post('change-privacy', 'TripController@changePrivacy');
+
+    Route::post('comment-publishing', 'TripController@saveComment');
+
+    Route::post('get-comment', 'TripController@getComment');
+
+    Route::post('get-comments', 'TripController@getComments');
+
+    Route::post('delete-comment', 'TripController@deleteComment');
+
+    Route::post('update-comment', 'TripController@updateComment');
+
+    Route::post('like-action', 'TripController@likeAction');
+
+    Route::post('list-likes', 'TripController@getLikes');
+
+    Route::post('list-shares', 'TripController@getShares');
+
+    Route::post('fav-action', 'TripController@favAction');
+
+    Route::post('list-favourit', 'TripController@getFavs');
+
+    Route::post('change-statusPublisher', 'TripController@ChangeStatusPublisher');
+
+    Route::post('get-public', 'TripController@publicTrip');
+
+    Route::post('get-follower', 'TripController@followerTrip');
+
+    Route::post('get-profile', 'TripController@publisherProfile');
+
+    Route::post('test', 'TripController@test');
+
 });
 
 /*=========================*/
@@ -170,7 +218,7 @@ Route::group( [
 
 
 /********************************
- *      trip routes
+ *      Risk routes
  *      API
  * ******************************/
 
@@ -182,7 +230,58 @@ Route::group( [
     ]
 ], function()
 {
-    Route::post('add-risk','RisksController@addRisk');
+    Route::post('add-risks','RisksController@addRisk');
+
+    Route::post('show-risks','RisksController@showRisks');
+
+    Route::post('edit-risks','RisksController@editRisks');
+
+    Route::post('delete-risks','RisksController@deleteRisks');
+
+    Route::post('show-types-risks','RisksController@showTypeRisks');
+
+});
+
+/*=========================*/
+
+/********************************
+ *      Risk comment routes
+ *      API
+ * ******************************/
+
+Route::group( [
+    'prefix' => 'risk-comment',
+    'namespace'=>"API",
+    'middleware'=>[
+        'CheckLang'
+    ]
+], function()
+{
+    Route::post('add-comment','RiskCommentController@addRiskComment');
+
+    Route::post('remove-comment','RiskCommentController@removeComment');
+
+
+});
+
+/*=========================*/
+
+
+/********************************
+ *      Risk comment routes
+ *      API
+ * ******************************/
+
+Route::group( [
+    'prefix' => 'setting',
+    'namespace'=>"API",
+    'middleware'=>[
+        'CheckLang'
+    ]
+], function()
+{
+    Route::post('contact','SettingsController@contact');
+
 
 
 });
