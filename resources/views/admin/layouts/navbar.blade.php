@@ -45,7 +45,7 @@
 
             <li><a href="{{route('home')}}"><i class="fa fa-tasks "></i> <span>Home</span></a></li>
 
-            <li><a href="{{route('user.index')}}"><i class="fa fa-tasks "></i> <span>Manage Users</span></a></li>
+            <li><a href="{{route('user.index')}}"><i class="fa fa-user-circle "></i> <span>Manage Users</span></a></li>
 
 
             <li><a href="{{route('store.index')}}"><i class="fa fa-tasks  "></i> <span>Manage Service Providers </span></a></li>
@@ -60,10 +60,10 @@
             </span>
                 </a>
                 <ul class="treeview-menu">
-                    <li><a href="#"><i class="fa fa-circle-o"></i> Road Risk</a></li>
-                    <li><a href="#"><i class="fa fa-circle-o"></i> Trips</a></li>
-                    <li><a href="#"><i class="fa fa-circle-o"></i> Image Gallery</a></li>
-                    <li><a href="#"><i class="fa fa-circle-o"></i> Video Gallery</a></li>
+                    <li><a href="{{route('road.index')}}"><i class="fa fa-circle-o"></i> Road Risk</a></li>
+                    <li><a href="{{route('trip.index')}}"><i class="fa fa-circle-o"></i> Trips</a></li>
+                    <li><a href="{{route('image.index')}}"><i class="fa fa-circle-o"></i> Image Gallery</a></li>
+                    <li><a href="{{route('video.index')}}"><i class="fa fa-circle-o"></i> Video Gallery</a></li>
                 </ul>
             </li>
 

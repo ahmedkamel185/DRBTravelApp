@@ -254,6 +254,12 @@
 <script src="{{'/design/adminlte'}}/dist/js/demo.js"></script>
 
 @yield('js')
-
+<script>
+    $( document ).ready(function() {
+        console.log( "ready!" );
+        $('.loading').hide();
+        $('.sk-folding-cube').hide();
+    });
+</script>
 </body>
 </html>

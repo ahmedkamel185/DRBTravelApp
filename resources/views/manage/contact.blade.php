@@ -3,16 +3,21 @@
 
 @endsection
 @section('content')
-    <form action="{{route('manage.contacts.update',['id'=>$terms->id])}}" method="post">
-        @csrf
-        <div class="form-group">
-            <label>Textarea</label>
-            <textarea class="form-control" name="contact_us" rows="15">{{$terms->contact_us}}</textarea>
+    <div class="card">
+        <form action="{{route('manage.contacts.update',['id'=>$terms->id])}}" method="post">
+            @csrf
+            <div class="form-group">
+                <label>تواصل معنا</label>
+                <input type="email" class="form-control" name="contact_us_ar" value="{{$terms->contact_us_ar}}">
+            </div>
 
-        </div>
-        <button type="submit" class="btn btn-wide btn-lg btn-success">Submit</button>
-    </form>
-
+            <div class="form-group">
+                <label>Contact us</label>
+                <input type="email" class="form-control" name="contact_us_en" value="{{$terms->contact_us_en}}">
+            </div>
+            <button type="submit" class="btn btn-wide btn-lg btn-success">Submit</button>
+        </form>
+    </div>
 
 
 

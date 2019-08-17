@@ -53,6 +53,27 @@ Route::group( [
 {
     Route::get('index','StoreController@index')->name('store.index');
 
+    Route::get('show/{id}','StoreController@show')->name('store.show');
+
+    Route::get('delete-address/{id}','StoreController@deleteAddress')->name('store.delete');
+
+    Route::get('edit-address/{id}','StoreController@editAddress')->name('store.edit');
+
+    Route::post('update-address/{id}','StoreController@updateAddress')->name('store.update');
+
+    Route::get('add-store','StoreController@addStore')->name('store.addStore');
+
+    Route::post('save-store','StoreController@store')->name('store.store');
+
+    Route::get('address-store/{id}','StoreController@storeAddress')->name('store.address');
+
+    Route::post('save-store-address/{id}','StoreController@saveAddress')->name('store.save');
+
+    Route::get('changeStatus', 'StoreController@changeStatus');
+
+    Route::get('changeVerified', 'StoreController@changeVerified');
+
+
 
 
 });
@@ -76,6 +97,8 @@ Route::group( [
     Route::get('show/{id}','UsersController@show')->name('user.show');
 
     Route::get('changeStatus', 'UsersController@changeStatus');
+
+    Route::get('changeVerified', 'UsersController@changeVerified');
 
 
 });
@@ -106,7 +129,7 @@ Route::group( [
  * ***********/
 
 Route::group( [
-    'prefix' => 'manage',
+    'prefix' => 'setting',
     'namespace'=>"WEB",
     'middleware'=>[
         'CheckLang'
@@ -173,4 +196,93 @@ Route::group( [
 
 
 });
+
+
+/*******
+ *
+ * images routes
+ *
+ * ***********/
+
+Route::group( [
+    'prefix' => 'image',
+    'namespace'=>"WEB",
+    'middleware'=>[
+        'CheckLang'
+    ]
+], function()
+{
+    Route::get('index','ImagesController@index')->name('image.index');
+
+
+
+});
+
+
+
+/*******
+ *
+ * videos routes
+ *
+ * ***********/
+
+Route::group( [
+    'prefix' => 'video',
+    'namespace'=>"WEB",
+    'middleware'=>[
+        'CheckLang'
+    ]
+], function()
+{
+    Route::get('index','VideosController@index')->name('video.index');
+
+
+
+});
+
+
+/*******
+ *
+ * road routes
+ *
+ * ***********/
+
+Route::group( [
+    'prefix' => 'road',
+    'namespace'=>"WEB",
+    'middleware'=>[
+        'CheckLang'
+    ]
+], function()
+{
+    Route::get('index','RoadRisksController@index')->name('road.index');
+
+    Route::get('changeStatus','RoadRisksController@changeStatus')->name('road.status');
+
+
+
+});
+
+/*******
+ *
+ * trip routes
+ *
+ * ***********/
+
+Route::group( [
+    'prefix' => 'trip',
+    'namespace'=>"WEB",
+    'middleware'=>[
+        'CheckLang'
+    ]
+], function()
+{
+    Route::get('index','tripController@index')->name('trip.index');
+
+    Route::get('delete/{id}','tripController@destroy')->name('trip.delete');
+
+
+
+});
+
 

@@ -9,6 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class Store extends Authenticatable
 {
+    use Notifiable;
     //stores ownener type
 
     public function StoreType()

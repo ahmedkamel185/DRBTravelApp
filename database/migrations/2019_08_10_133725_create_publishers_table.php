@@ -22,8 +22,9 @@ class CreatePublishersTable extends Migration
             $table->string('city');
             $table->string('email')->unique();
             $table->string('password');
-            $table->integer('verified')->default('1');
+            $table->integer('verified')->default(1);
             $table->text('bio')->nullable();
+            $table->string("temporay_password")->nullable();
             $table->string('lang')->nullable();
             $table->string("device_id")->nullable();
             $table->string("device_type")->nullable();

@@ -10,6 +10,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 class Publisher extends Authenticatable
 {
     //
+    use Notifiable;
     protected $fillable = [
         'username', 'email', 'password','mobile','device_id',
     ];
@@ -59,6 +60,20 @@ class Publisher extends Authenticatable
         return $this->hasMany('App\Models\Comment','user_id','id');
     }
 
+    /*======================*/
+    //likes
+    public function suggestLikes()
+    {
+        return $this->hasMany('App\Models\LikeSuggest','user_id','id');
+    }
+
+    //likes
+    public function suggestComments()
+    {
+        return $this->hasMany('App\Models\CommentSuggest','user_id','id');
+    }
+
+    /*======================*/
     // favourtits
 
     public function favourits()

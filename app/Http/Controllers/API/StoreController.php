@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Store;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Str;
 use URL;
 use Image;
 use Validator;
@@ -289,32 +290,117 @@ class StoreController extends Controller
         }
     }
 
-    // password reset
-    public function passwordReset(Request $request)
-    {
-        if (!$this->validateEmail($request->email))
-        {
-//            $msg = $request['lang'] == 'ar' ? 'الايميل غير موجود ':"Email Not Found !";
-//            return response()->json(['key' => 'fail','value' => '0', 'msg' => $msg[0]]);
-            return response()->json('error',404);
+
+
+
+    // logout
+    public function logout(Request $request){
+        $validator=Validator::make($request->all(),[
+            'user_id'   =>"required|exists:stores,id",
+        ]);
+
+        if ($validator->passes()) {
+            $lang             = $request['lang'];
+            $user             = User::find($request['user_id']);
+            $user->device_id  = null;
+            $user->device_type= null;
+            $user->update();
+            $msg = $lang == "ar"? "تم تسجيل الخروج":"sucessfull logout";
+            return response()->json(['status'=>true,'data' => ["store"=>""], 'msg' => $msg]);
         }
-
-        $this->sendEmail($request->email);
-//        $msg = $request['lang'] == 'ar' ? 'تم ارسال الايميل بنجاح .':"Email sent successfully.";
-//        return response()->json(['value' => '1', 'msg' => $msg[0]]);
-        return response()->json('done',200);
-
-
+        else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
     }
 
-    public function sendEmail($email)
-    {
-        Mail::to($email)->send(new App\Http\Controllers\API\Mail\resetPasswordMail());
+    // reset mail
+    public function restPasswordMail(Request $request){
+        $validator=Validator::make($request->all(),[
+            'email'   =>"required|email|exists:stores,email",
+        ]);
+
+        if ($validator->passes()) {
+            $lang                    = $request['lang'];
+            $user                    = User::where('email',$request['email'])->first();
+            $user->temporay_password = Str::random(10);
+            $user->update();
+            \Mail::to($user)->send(new  \App\Mail\ResetPassword($user->username,  $user->temporay_password));
+            $msg = $lang == "ar"? "تم ارسال الميل ":"sucessfull send mail ";
+            return response()->json(['status'=>true,'data' => ["publisher"=>['temp'=>$user->temporay_password]], 'msg' => $msg]);
+        }
+        else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
     }
 
-    public function validateEmail($email)
+    // check code whic send
+    public function checkTemploaryPassword(Request $request){
+        $validator=Validator::make($request->all(),[
+            'email'          =>"required|email|exists:stores,email",
+            'temp_password'  =>"required"
+        ]);
+
+        if ($validator->passes()) {
+            $lang                    = $request['lang'];
+            $user                    = User::where('email',$request['email'])->first();
+            if( $user->temporay_password != $request['temp_password'])
+            {
+                $msg = $lang == "ar"? "كود الدخول الموقت غير صحيح":"tempory code for login not sucesss";
+                return response()->json(['status'=>false,'data' => ["publisher"=>['temp'=>""]], 'msg' => $msg]);
+            }
+
+            $msg = $lang == "ar"? "تم التاكد يرجع تغير الرقم السرى":"sucessfull verifed user pleaze change passowrd";
+            return response()->json(['status'=>true,'data' => ["publisher"=>$this->responseUser($user)], 'msg' => $msg]);
+        }
+        else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+
+    // reset-password
+    public function resetPassword(Request $request)
     {
-        return !!User::where('email',$email)->first();
+        $validator=Validator::make($request->all(),[
+            'user_id'   =>"required|exists:stores,id",
+            'password'  =>"required|min:6|max:190"
+        ]);
+
+        if ($validator->passes()) {
+            $lang               = $request['lang'];
+            $user               = User::find($request['user_id']);
+            if(is_null( $user->temporay_password)){
+                $msg = $lang == "ar"? "كود الدخول لم يتم ارساله":"tempory code not send";
+                return response()->json(['status'=>false,'data' => ["publisher"=>['temp'=>""]], 'msg' => $msg]);
+            }
+            $user->password     = bcrypt(convert2english($request['password']));
+            $user->temporay_password =null ;
+            $user->update();
+            publisher_log(
+                $request['user_id'],
+                ' لقد قمت تغير كلمة المرور  ',
+                'you change the password'
+            );
+            $msg = $lang == "ar"? "تم تغير كلمة المرور":"change the password sucessfull";
+            return response()->json(['status'=>true,'data' => ["publisher"=>""], 'msg' => $msg]);
+        }else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
     }
 
 

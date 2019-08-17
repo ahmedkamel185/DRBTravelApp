@@ -4,17 +4,19 @@ namespace App\Http\Controllers\WEB;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Models\Manages;
+use App\Models\Setting;
 class ManageController extends Controller
 {
     public function index()
     {
-        return view('manage.index')->with('manages',Manages::first());
+
+
+        return view('manage.index')->with('manages',Setting::first());
     }
 
     public function editTerms(Request $request)
     {
-        $term = Manages::find($request->id);
+        $term = Setting::find($request->id);
 
         return view('manage.terms')->with('terms',$term);
     }
@@ -22,10 +24,12 @@ class ManageController extends Controller
     public function updateTerms(Request $request)
     {
         $validator = $this->validate($request,[
-           'terms'   => 'required'
+           'terms_ar'   => 'required',
+           'terms_en'   => 'required'
         ]);
-        $term = Manages::find($request->id);
-        $term->terms = $request['terms'];
+        $term = Setting::find($request->id);
+        $term->terms_ar = $request['terms_ar'];
+        $term->terms_en = $request['terms_en'];
         $term->save();
         session()->flash('success','You have successfully edited the content. ');
         return redirect()->route('manage.index');
@@ -37,7 +41,7 @@ class ManageController extends Controller
 
     public function editContacts(Request $request)
     {
-        $contact = Manages::find($request->id);
+        $contact = Setting::find($request->id);
 
         return view('manage.contact')->with('terms',$contact);
     }
@@ -45,10 +49,12 @@ class ManageController extends Controller
     public function updateContacts(Request $request)
     {
         $validator = $this->validate($request,[
-            'contact_us'   => 'required'
+            'contact_us_ar'   => 'required',
+            'contact_us_en'   => 'required'
         ]);
-        $contact = Manages::find($request->id);
-        $contact->contact_us = $request['contact_us'];
+        $contact = Setting::find($request->id);
+        $contact->contact_us_ar = $request['contact_us_ar'];
+        $contact->contact_us_en = $request['contact_us_en'];
         $contact->save();
         session()->flash('success','You have successfully edited the content. ');
         return redirect()->route('manage.index');
@@ -59,7 +65,7 @@ class ManageController extends Controller
 
     public function editAbout(Request $request)
     {
-        $about = Manages::find($request->id);
+        $about = Setting::find($request->id);
 
         return view('manage.about')->with('terms',$about);
     }
@@ -67,10 +73,12 @@ class ManageController extends Controller
     public function updateAbout(Request $request)
     {
         $validator = $this->validate($request,[
-            'about_us'   => 'required'
+            'about_ar'   => 'required',
+            'about_en'   => 'required'
         ]);
-        $about = Manages::find($request->id);
-        $about->about_us = $request['about_us'];
+        $about = Setting::find($request->id);
+        $about->about_ar = $request['about_ar'];
+        $about->about_en = $request['about_en'];
         $about->save();
         session()->flash('success','You have successfully edited the content. ');
         return redirect()->route('manage.index');

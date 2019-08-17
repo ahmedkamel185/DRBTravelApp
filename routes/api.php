@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+header("Connection: Keep-alive");
 
 /*
 |--------------------------------------------------------------------------
@@ -56,7 +57,15 @@ Route::group( [
 
     Route::post('followers-list','PublisherController@follower_list');
 
+    Route::post('search-publisher','PublisherController@searchPublisher');
 
+    Route::post('logout','PublisherController@logout');
+
+    Route::post('send-emailReset','PublisherController@restPasswordMail');
+
+    Route::post('ceheck-tempPassword','PublisherController@checkTemploaryPassword');
+
+    Route::post('reset-password','PublisherController@resetPassword');
 
 });
 
@@ -89,6 +98,16 @@ Route::group( [
 
     Route::post('sendPasswordReset','StoreController@passwordReset');
 
+    Route::post('logout','StoreController@logout');
+
+
+    Route::post('send-emailReset','StoreController@restPasswordMail');
+
+    Route::post('ceheck-tempPassword','StoreController@checkTemploaryPassword');
+
+    Route::post('reset-password','StoreController@resetPassword');
+
+
 
 
 });
@@ -116,8 +135,49 @@ Route::group( [
 
     Route::post('update-store-place','storePlacesController@updateStorePlace');
 
+    Route::post('store-near','storePlacesController@nearPlaces');
 
 
+
+
+
+});
+
+/*=========================*/
+Route::group( [
+    'prefix' => 'suggest',
+    'namespace'=>"API",
+    'middleware'=>[
+        'CheckLang'
+    ]
+], function()
+{
+
+    Route::post('add-suggest','SuggestController@addSuugest');
+
+    Route::post('edit-suggest','SuggestController@editSuugest');
+
+    Route::post('delte-suggest','SuggestController@delteSuugest');
+
+    Route::post('get-suggest','SuggestController@getSuugest');
+
+    Route::post('list-suggest','SuggestController@getSuugests');
+
+    Route::post('user-suggest','SuggestController@getUserSuggest');
+
+    Route::post('comment-suggest', 'SuggestController@saveComment');
+
+    Route::post('get-comment', 'SuggestController@getComment');
+
+    Route::post('get-comments', 'SuggestController@getComments');
+
+    Route::post('delete-comment', 'SuggestController@deleteComment');
+
+    Route::post('update-comment', 'SuggestController@updateComment');
+
+    Route::post('like-action', 'SuggestController@likeAction');
+
+    Route::post('list-likes', 'SuggestController@getLikes');
 
 
 });
@@ -138,6 +198,12 @@ Route::group( [
 ], function()
 {
       Route::post('get-storeTypes', 'BasicInfoController@getStoresTypes');
+
+      Route::post('get-terms', 'BasicInfoController@getTerms');
+
+      Route::post('get-about', 'BasicInfoController@getAbout');
+
+      Route::post('get-contact', 'BasicInfoController@getContact');
 });
 
 /*=========================*/
@@ -157,6 +223,8 @@ Route::group( [
 {
     Route::post('start-trip', 'TripController@startTrip');
 
+    Route::post('get-trip', 'TripController@getTrip');
+
     Route::post('end-trip', 'TripController@endTrip');
 
     Route::post('share-trip', 'TripController@shareTrip');
@@ -164,6 +232,8 @@ Route::group( [
     Route::post('delete-trip', 'TripController@deleteTrip');
 
     Route::post('update-trip', 'TripController@updateTrip');
+
+    Route::post('change-descTrip', 'TripController@changeDescTrip');
 
     Route::post('get-currentTrip', 'TripController@currentTrip');
 
@@ -209,7 +279,9 @@ Route::group( [
 
     Route::post('get-profile', 'TripController@publisherProfile');
 
-    Route::post('test', 'TripController@test');
+    Route::post('list-trips', 'TripController@getPublishingUser');
+
+    Route::get('test', 'TripController@test');
 
 });
 

@@ -30,7 +30,10 @@
                                         class="fa fa-edit "></a>
                             </p>
                         <p>
-                            {{$manages->terms}}
+                            {{$manages->terms_ar}}
+                        </p>
+                        <p>
+                            {{$manages->terms_en}}
                         </p>
                     </div>
                     <!-- /.tab-pane -->
@@ -41,7 +44,8 @@
                                     class="fa fa-edit "></a>
                         </p>
 
-                        <p>{{$manages->contact_us}}</p>
+                        <p>{{$manages->contact_us_ar}}</p>
+                        <p>{{$manages->contact_us_en}}</p>
                     </div>
                     <!-- /.tab-pane -->
                     <div class="tab-pane" id="tab_3">
@@ -50,7 +54,8 @@
                                     href="{{route('manage.about.edit',['id'=>$manages->id])}}"
                                     class="fa fa-edit "></a>
                         </p>
-                        <p>{{$manages->about_us}}</p>
+                        <p>{{$manages->about_ar}}</p>
+                        <p>{{$manages->about_en}}</p>
                     </div>
                     <!-- /.tab-pane -->
                 </div>

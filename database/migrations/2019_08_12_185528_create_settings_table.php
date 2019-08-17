@@ -17,6 +17,10 @@ class CreateSettingsTable extends Migration
             $table->bigIncrements('id');
             $table->text('about_ar');
             $table->text('about_en');
+            $table->text('terms_ar');
+            $table->text('terms_en');
+            $table->string('contact_us_ar');
+            $table->string('contact_us_en');
             $table->timestamps();
         });
     }

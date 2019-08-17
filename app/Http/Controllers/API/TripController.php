@@ -20,6 +20,8 @@ use Validator;
 use File;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Client;
+use App\Notifications\Comment as commentNotify;
+use App\Notifications\Like as LikeNotify;
 
 class TripController extends Controller
 {
@@ -43,16 +45,14 @@ class TripController extends Controller
          $res['status']         = is_null($trip['status'])?0:$trip['status'];
          $res['distance']       = $trip['distance'];
          $res['estimated_duration']=$trip['estimated_duration'];
-         if($publisher)
+//         if($publisher)
             $res['publisher']      = $this->responseUser($trip->publisher);
-         else
-             $res['publisher_id']  = $trip->publisher_id;
+//         else
+//             $res['publisher_id']  = $trip->publisher_id;
          $res['created_at']     = $trip->created_at->format('d-m-Y h:i a');
          if($trip->status == 1)
          {
              $res['desc']       = is_null($trip->desc)? "":$trip->desc;
-             if($trip->privacy)
-                $res['privacy'] =  is_null($trip->privacy)? "":$trip->privacy;
              $res['ended_at']   = empty($trip->ended_at)?" ": $trip->ended_at->format('d-m-Y h:i a');
              $interval          = $trip->created_at->diff($trip->ended_at);
              $duration          = [
@@ -120,11 +120,11 @@ class TripController extends Controller
          $res['id']         = $publishing->id;
          $res['status']     = $publishing->status;
          $res['privacy']    = $publishing->privacy;
-         $res['trip']       = $this->reponseTrip($publishing->trip);
+         $res['postTrip']       = $this->reponseTrip($publishing->trip);
          $res['sharer']     = "";
          $res['comments']   = $publishing->comments->count();
          $res['likes_count']= $publishing->likes->count();
-         $res['likes_latest']= $res['likes_count'] >0? $publishing->likes()->latest()->first()->user->display_name:0;
+         $res['likes_latest']= $res['likes_count'] >0? $publishing->likes()->latest()->first()->user->display_name:"";
          $res['share_count'] = Publishing::shareTrips($publishing->trip_id)->count();
          if($res['share_count'] > 0)
             $res['share_latest']= Publishing::shareTrips($publishing->trip_id)
@@ -138,7 +138,6 @@ class TripController extends Controller
          if($user_id){
              $res['likes_status']  = $publishing->likes()->where('user_id', $user_id)->count() > 0;
              $res['fav_status']    = $publishing->favourits()->where('user_id', $user_id)->count() > 0;
-             $res['blocke_status'] = $publishing->blockeds()->where('user_id', $user_id)->count() > 0;
          }
         $res['created_at'] = $publishing->created_at->format('d-m-Y h:i a');
         return $res;
@@ -196,7 +195,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => ['trip'=>""],
+                        'data' => ['trip'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -266,6 +265,49 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => false,
+                        'data'  => ['id'=>null],
+                        'msg'   =>""
+                    ]
+                );
+            }
+
+        }else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+
+    // get trip
+
+    public  function getTrip(Request $request){
+        $validator=Validator::make($request->all(),[
+            'publisher_id'        => 'required|exists:publishers,id',
+            'trip_id'             => 'required|exists:trips,id'
+
+        ]);
+        if ($validator->passes()) {
+            $trip        = Trip::where('id', $request['trip_id'])
+                ->where('publisher_id', $request['publisher_id'])
+                ->where('status', 1)->first();
+            $data = [];
+            if($trip){
+                $data  = $this->reponseTrip($trip);
+                return response()->json(
+                    [
+                        'status' => true,
+                        'data'  => ['trip'=>$data],
+                        'msg'   =>""
+                    ]
+                );
+            }
+            else
+            {
+                return response()->json(
+                    [
+                        'status' => false,
                         'data'  => ['trip'=>$data],
                         'msg'   =>""
                     ]
@@ -281,7 +323,7 @@ class TripController extends Controller
         }
     }
 
-
+    // public function getTrips
     // finsh trip
     public function endTrip(Request $request){
         $validator=Validator::make($request->all(),[
@@ -289,6 +331,7 @@ class TripController extends Controller
             'publisher_id'   => 'required|exists:publishers,id',
             'desc'           => 'nullable',
             'privacy'        => 'required|in:public,private,flowers',
+            'status'         =>  'required|in:0,1' // 0 for not publsihin now  1 publishing now
 
         ]);
         if ($validator->passes()) {
@@ -301,7 +344,7 @@ class TripController extends Controller
                    return response()->json(
                        [
                            'status' => false,
-                           'data' => ['trip'=>""],
+                           'data' => ['trip'=> ['id'=>null] ],
                            'msg'=>$msg
                        ]
                    );
@@ -312,7 +355,7 @@ class TripController extends Controller
                $trip->update();
                $publishing               = new Publishing;
                $publishing->trip_id      = $trip->id;
-               $publishing->status       = 1;
+               $publishing->status       = $request['status'];
                $publishing->publisher_id = $request['publisher_id'];
                $publishing->privacy      = $request['privacy'];
                $publishing->save();
@@ -321,11 +364,11 @@ class TripController extends Controller
                     'لقد قمت بانهاء رحله',
                     'you end trip'
                 );
-               $msg = $request['lang'] == 'ar' ? ' تم الانهاء بنجاح.' : ' sucessfull  finsh .';
+               $msg = $request['lang'] == 'ar' ? ' تم الانهاء بنجاح.' : ' sucessfull  finish .';
                 return response()->json(
                     [
                         'status' => true,
-                        'data' => ['trip'=>""],
+                        'data' => ['trip'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -335,7 +378,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => ['trip'=>""],
+                        'data' => ['trip'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -654,6 +697,49 @@ class TripController extends Controller
         }
     }
 
+    // change desc
+    // update basic info trip
+    public function  changeDescTrip(Request $request)
+    {
+        $validator=Validator::make($request->all(),[
+            'trip_id'             => 'required|exists:trips,id',
+            'user_id'             => 'required|exists:publishers,id',
+            'desc'                =>  'nullable'
+        ]);
+        if ($validator->passes()) {
+            $trip                = Trip::where('id',$request['trip_id'])
+                ->where('publisher_id', $request['user_id'])->first();
+            if($trip){
+                $trip->desc  = $request['desc'];
+                $trip->update();
+                $msg = $request['lang'] == 'ar' ? ' تم التعديل.' : ' update sucessful.';
+                return response()->json(
+                    [
+                        'status' => true,
+                        'data' => "",
+                        'msg'=>$msg
+                    ]
+                );
+            }else{
+                $msg = $request['lang'] == 'ar' ? ' المستخدم لايملك هذه الرحله.' : ' user not owner the trip.';
+                return response()->json(
+                    [
+                        'status' => false,
+                        'data' => "",
+                        'msg'=>$msg
+                    ]
+                );
+            }
+
+        }else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+
     /**********************
      *      publishing
      *          post
@@ -745,29 +831,14 @@ class TripController extends Controller
 
         ]);
         if ($validator->passes()) {
-            $publishing                = Publishing::where('id',$request['publishing_id'])
-                ->where('publisher_id', $request['user_id'])
-                ->orWhere('sharer_id',$request['user_id'])->first();
-            if($publishing){
-
-                return response()->json(
-                    [
-                        'status' => true,
-                        'data' => ['publishing'=> $this->responsePublishing($publishing, $request['user_id'])],
-                        'msg'=>""
-                    ]
-                );
-            }else{
-                $msg = $request['lang'] == 'ar' ? ' المستخدم لايملك هذه الرحله.' : ' user not owner the trip.';
-                return response()->json(
-                    [
-                        'status' => false,
-                        'data' => "",
-                        'msg'=>$msg
-                    ]
-                );
-            }
-
+            $publishing                = Publishing::find($request['publishing_id']);
+            return response()->json(
+                [
+                    'status' => true,
+                    'data' => ['publishing'=> $this->responsePublishing($publishing, $request['user_id'])],
+                    'msg'=>""
+                ]
+            );
         }else{
             foreach ((array)$validator->errors() as $key => $value){
                 foreach ($value as $msg){
@@ -878,11 +949,18 @@ class TripController extends Controller
                 $comment->user_id       = $request['user_id'] ;
                 $comment->body          = $request['body'] ;
                 $comment->save();
-
+                $publishing->publisher->notify(new commentNotify
+                     (
+                        $publishing->publisher,
+                        "publishing",
+                        $publishing->id,
+                        $comment
+                    )
+                );
                 publisher_log(
                     $request['user_id'],
                     ' لقد قمت باضافة تعليق ل '.$comment->publishing->publisher->display_name,
-                    'you share the trip to'.$comment->publishing->publisher->display_name
+                    'you add comment to'.$comment->publishing->publisher->display_name
                 );
 
                 $msg = $request['lang'] == 'ar' ? ' تم اضافة التعليق.' : ' sucessfull add comment.';
@@ -1102,8 +1180,16 @@ class TripController extends Controller
                     $like->publishing_id    = $request['publishing_id'];
                     $like->save();
                     $msg = $request['lang'] == 'ar' ? ' تم الاعجاب.' : ' sucessfull liked.';
+                    $publishing->publisher->notify(new LikeNotify
+                        (
+                            $publishing->publisher,
+                            "publishing",
+                            $publishing->id,
+                            $like
+                        )
+                    );
                     publisher_log(
-                        $request['publisher_id'],
+                        $request['user_id'],
                         ' لقد قمت  بالاعجاب ل '.$like->publishing->publisher->display_name,
                         'you do the like for'.$like->publishing->publisher->display_name
                     );
@@ -1413,12 +1499,14 @@ class TripController extends Controller
             $data       = getCollectionPagantion($publsihng)->map(function ($publishing) use($request){
                 return $this->responsePublishing($publishing, $request['user_id']);
             });
+            $res['pulishings'] = $data;
+            $res['meta']        = $meta;
             return response()->json(
                 [
                     'status' => true,
-                    'data'   =>['publishings'=> $data],
+                    'data'   =>['publishings'=> $res],
                     'msg'    =>"",
-                    'meta'   => $meta
+//                    'meta'   => $meta
                 ]
             );
 
@@ -1508,11 +1596,11 @@ class TripController extends Controller
             $data       = getCollectionPagantion($publsihng)->map(function ($publishing) use($request){
                 return $this->responsePublishing($publishing, $request['user_id']);
             });
-            $arr['publishings'] = $data;
+//            $arr['publishings'] = $data;
             return response()->json(
                 [
                     'status' => true,
-                    'data'   =>['profile'=> $arr],
+                    'data'   =>['profile'=> $data],
                     'msg'    =>"",
                     'meta'   => $meta
                 ]
@@ -1527,10 +1615,43 @@ class TripController extends Controller
         }
 
     }
+    // get the post
+    public function  getPublishingUser(Request $request)
+    {
+        $validator=Validator::make($request->all(),[
+            'user_id'        => 'required|exists:publishers,id'
 
+        ]);
+        if ($validator->passes()) {
+            $publishing                = Publishing::whereNull("sharer_id")
+                ->where('publisher_id', $request['user_id'])->simplePaginate(10);
+
+            $meta       = getBasicInfoPagantion($publishing);
+
+            $data       = getCollectionPagantion($publishing)->map(function ($publishing) use($request){
+                return $this->responsePublishing($publishing, $request['user_id']);
+            });
+            return response()->json(
+                [
+                    'status' => true,
+                    'data'   =>['publishings'=> $data],
+                    'msg'    =>"",
+                    'meta'   => $meta
+                ]
+            );
+
+        }else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
     // test
     public function test(Request $request){
         // Create a client with a base URI
+        phpInfo();
         $origin       = "30.044281,31.340002";
         $destination  = "31.037933,31.381523";
         $client = new Client([

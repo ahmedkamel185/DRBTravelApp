@@ -27,7 +27,7 @@
     <link rel="stylesheet" href="{{url('/design/adminlte')}}/bower_components/bootstrap-daterangepicker/daterangepicker.css">
     <!-- bootstrap wysihtml5 - text editor -->
     <link rel="stylesheet" href="{{url('/design/adminlte')}}/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.min.css">
-
+    <link rel="stylesheet" href="{{url('/design/css')}}/main.css">
     @yield('cs')
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->

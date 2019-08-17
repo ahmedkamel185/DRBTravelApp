@@ -12,6 +12,8 @@ use App\Models\Publisher as User;
 use App\Models\Block ;
 use App\Models\Follower;
 use File;
+use Illuminate\Support\Str;
+use App\Notifications\Follow as FollowNotify;
 
 class PublisherController extends Controller
 {
@@ -445,6 +447,9 @@ class PublisherController extends Controller
                 $follow->follow_id    = $request['publisher_id'];
                 $follow->save();
                 $msg                  = $lang=="ar"?"تم  التتبع بنجاح":"sucessfull follow";
+                $followUser           = User::find($request['publisher_id']);
+                $followerUser         = User::find($request['user_id']);
+                $followUser->notify(  new FollowNotify($followUser ,   $followerUser ));
                 publisher_log(
                     $request['user_id'],
                     ' لقد قمت تتبع  '.$follow->follow->display_name,
@@ -499,6 +504,143 @@ class PublisherController extends Controller
                 return $this->responseBlock($blocker);
             });
             return response()->json(['status'=>true,'data' => ["followers"=>$data], 'msg' => ""]);
+        }else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+
+    // search
+    public function searchPublisher(Request $request)
+    {
+        $validator=Validator::make($request->all(),[
+            'search'   =>"required",
+        ]);
+        if ($validator->passes()) {
+            $lang     = $request['lang'];
+            $blocks       = Block::buldBlockId($request['user_id']);
+            $blockingMe   = Block::buldBlockerId($request['user_id']);
+            $allBlocks    = array_merge($blocks, $blockingMe);
+            $publishrs= User::whereNotIn('id', $allBlocks )
+                            ->where('username','LIKE', '%' . $request['search'] . '%')
+                            ->orWhere('display_name','LIKE', '%' . $request['search'] . '%')->get();
+            $data    = $publishrs->map(function ($publisher){
+                return $this->responsePublisherUser($publisher);
+            });
+            return response()->json(['status'=>true,'data' => ["publishers"=>$data], 'msg' => ""]);
+        }else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+
+    // logout
+    public function logout(Request $request){
+        $validator=Validator::make($request->all(),[
+            'user_id'   =>"required|exists:publishers,id",
+        ]);
+
+        if ($validator->passes()) {
+            $lang             = $request['lang'];
+            $user             = User::find($request['user_id']);
+            $user->device_id  = null;
+            $user->device_type= null;
+            $user->update();
+            $msg = $lang == "ar"? "تم تسجيل الخروج":"sucessfull logout";
+            return response()->json(['status'=>true,'data' => ["publisher"=>""], 'msg' => $msg]);
+        }
+        else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+
+    // reset mail
+    public function restPasswordMail(Request $request){
+        $validator=Validator::make($request->all(),[
+            'email'   =>"required|email|exists:publishers,email",
+        ]);
+
+        if ($validator->passes()) {
+            $lang                    = $request['lang'];
+            $user                    = User::where('email',$request['email'])->first();
+            $user->temporay_password = Str::random(10);
+            $user->update();
+            \Mail::to($user)->send(new  \App\Mail\ResetPassword($user->username,  $user->temporay_password));
+            $msg = $lang == "ar"? "تم ارسال الميل ":"sucessfull send mail ";
+            return response()->json(['status'=>true,'data' => ["publisher"=>['temp'=>$user->temporay_password]], 'msg' => $msg]);
+        }
+        else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+
+    // check code whic send
+    public function checkTemploaryPassword(Request $request){
+        $validator=Validator::make($request->all(),[
+            'email'          =>"required|email|exists:publishers,email",
+            'temp_password'  =>"required"
+        ]);
+
+        if ($validator->passes()) {
+            $lang                    = $request['lang'];
+            $user                    = User::where('email',$request['email'])->first();
+            if( $user->temporay_password != $request['temp_password'])
+            {
+                $msg = $lang == "ar"? "كود الدخول الموقت غير صحيح":"tempory code for login not sucesss";
+                return response()->json(['status'=>false,'data' => ["publisher"=>['temp'=>""]], 'msg' => $msg]);
+            }
+
+            $msg = $lang == "ar"? "تم التاكد يرجع تغير الرقم السرى":"sucessfull verifed user pleaze change passowrd";
+            return response()->json(['status'=>true,'data' => ["publisher"=>$this->responsePublisherUser($user)], 'msg' => $msg]);
+        }
+        else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+
+    // reset-password
+    public function resetPassword(Request $request)
+    {
+        $validator=Validator::make($request->all(),[
+            'user_id'   =>"required|exists:publishers,id",
+            'password'  =>"required|min:6|max:190"
+        ]);
+
+        if ($validator->passes()) {
+            $lang               = $request['lang'];
+            $user               = User::find($request['user_id']);
+            if(is_null( $user->temporay_password)){
+                $msg = $lang == "ar"? "كود الدخول لم يتم ارساله":"tempory code not send";
+                return response()->json(['status'=>false,'data' => ["publisher"=>['temp'=>""]], 'msg' => $msg]);
+            }
+            $user->password     = bcrypt(convert2english($request['password']));
+            $user->temporay_password =null ;
+            $user->update();
+            publisher_log(
+                $request['user_id'],
+                ' لقد قمت تغير كلمة المرور  ',
+                'you change the password'
+            );
+            $msg = $lang == "ar"? "تم تغير كلمة المرور":"change the password sucessfull";
+            return response()->json(['status'=>true,'data' => ["publisher"=>""], 'msg' => $msg]);
         }else{
             foreach ((array)$validator->errors() as $key => $value){
                 foreach ($value as $msg){
