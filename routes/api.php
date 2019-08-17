@@ -67,6 +67,10 @@ Route::group( [
 
     Route::post('reset-password','PublisherController@resetPassword');
 
+    Route::post('get-notifications','PublisherController@getNotifications');
+
+    Route::post('delte-notification','PublisherController@deleteNotifications');
+
 });
 
 /*=========================*/
@@ -107,7 +111,9 @@ Route::group( [
 
     Route::post('reset-password','StoreController@resetPassword');
 
+    Route::post('get-notifications','StoreController@getNotifications');
 
+    Route::post('delte-notification','StoreController@deleteNotifications');
 
 
 });

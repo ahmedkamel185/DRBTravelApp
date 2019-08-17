@@ -99,6 +99,7 @@ class TripController extends Controller
         $res['follower']        = $user->follows()->count();
         $res['follow']         = $user->followers()->count();
         $res['type']            = 1;
+        $res['notification_count']= $user->unreadNotifications()->count();
         return $res;
     }
 
@@ -1494,6 +1495,7 @@ class TripController extends Controller
                                 ->where('block', 0)
                                 ->whereNotIn('publisher_id', $allBlocks )
                                 ->WhereNotIn('sharer_id', $allBlocks)
+                                ->latest()
                                 ->simplePaginate(10);
             $meta       = getBasicInfoPagantion($publsihng);
             $data       = getCollectionPagantion($publsihng)->map(function ($publishing) use($request){
@@ -1538,6 +1540,7 @@ class TripController extends Controller
                             ->whereIn('publisher_id', $followers)
                             ->whereNotIn('publisher_id', $allBlocks )
                             ->WhereNotIn('sharer_id', $allBlocks)
+                            ->latest()
                             ->simplePaginate(10);
             $meta       = getBasicInfoPagantion($publsihng);
             $data       = getCollectionPagantion($publsihng)->map(function ($publishing) use($request){
@@ -1576,6 +1579,7 @@ class TripController extends Controller
                 $publsihng    = Publishing::whereIn('privacy', ['public','private','flowers'] )
                     ->where('publisher_id', $request['publisher_id'] )
                     ->Where('sharer_id', $request['publisher_id'])
+                    ->latest()
                     ->simplePaginate(10);
             } else if(in_array($request['user_id'], $followers))
             {

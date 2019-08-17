@@ -12,6 +12,9 @@ use App\Models\Block;
 use App\Models\CommentSuggest as Comment;
 use App\Models\LikeSuggest as Like;
 
+use App\Notifications\Comment as commentNotify;
+use App\Notifications\Like as LikeNotify;
+
 class SuggestController extends Controller
 {
     //response suggest
@@ -241,10 +244,10 @@ class SuggestController extends Controller
             $blocks             = Block::buldBlockId($request['user_id']);
             $blockingMe         = Block::buldBlockerId($request['user_id']);
             $allBlocks          = array_merge($blocks, $blockingMe);
-            $suggests           = Suggest::whereNotIn('user_id', $allBlocks )->simplePaginate(10);
+            $suggests           = Suggest::whereNotIn('user_id', $allBlocks )->latest()->simplePaginate(10);
             $meta               = getBasicInfoPagantion($suggests);
             $data               = getCollectionPagantion($suggests)->map(function ($suggest) use($request){
-                $this->responseSuggest($suggest, $request['user_id']);
+                return $this->responseSuggest($suggest, $request['user_id']);
             });
             return response()->json(
                 [
@@ -329,7 +332,14 @@ class SuggestController extends Controller
                     ' لقد قمت باضافة تعليق ل '.$comment->suggest->publisher->display_name,
                     'you  add  the comment to'.$comment->suggest->publisher->display_name
                 );
-
+               $comment->suggest->publisher->notify(new commentNotify
+                (
+                    $comment->suggest->publisher,
+                    "suggest",
+                    $comment->id,
+                    $comment
+                )
+               );
                 $msg = $request['lang'] == 'ar' ? ' تم اضافة التعليق.' : ' sucessfull add comment.';
                 return response()->json(
                     [
@@ -523,6 +533,15 @@ class SuggestController extends Controller
                     ->where('user_id', $request['user_id'])->first();
                 if($like) {
                     $msg = $request['lang'] == 'ar' ? ' تم حذف الاعجاب.' : ' sucessfull delete liked.';
+                    $suugest  = Suggest::find($request['suggest_id']);
+                    $suugest->publisher->notify(new LikeNotify
+                        (
+                            $suugest->publisher,
+                            "suggest",
+                            $suugest->id,
+                            $like
+                        )
+                    );
                     publisher_log(
                         $request['user_id'],
                         ' لقد قمت بحذف الاعجاب ل '.$like->suggest->publisher->display_name,

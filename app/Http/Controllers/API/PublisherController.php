@@ -63,6 +63,7 @@ class PublisherController extends Controller
         $res['follow']          = $user->follows()->count();
         $res['follower']        = $user->followers()->count();
         $res['type']            = 1;
+        $res['notification_count']= $user->unreadNotifications()->count();
         return $res;
     }
 
@@ -74,6 +75,21 @@ class PublisherController extends Controller
         $res['created_at']  = $block->created_at->format('d-m-Y h:i a');
         return $res;
 
+    }
+
+    // reposne notifcation
+    protected  function responseNotification($notify){
+        $res['id']        = $notify['id'];
+        $res['image']     = $notify->data['image'];
+        $res['pid']       = $notify->data['pid'];
+        $res['type']      = $notify->data['type'];
+        $res['title_ar']  = $notify->data['title_ar'];
+        $res['title_en']  = $notify->data['title_en'];
+        $res['msg_ar']    = $notify->data['msg_ar'];
+        $res['msg_en']    = $notify->data['msg_en'];
+        $res['created_at']= $notify->created_at->format('d-m-Y h:i a');
+        $res['readed_at'] = is_null($notify->read_at)?"":$notify->read_at->format('d-m-Y h:i a');
+        return $res ;
     }
     /*===========================*/
 
@@ -192,6 +208,61 @@ class PublisherController extends Controller
              }
          }
      }
+
+    // get user notifcation
+    public function getNotifications(Request $request){
+        $validator=Validator::make($request->all(),[
+            'user_id'          => 'required|exists:publishers,id',
+        ]);
+        if ($validator->passes()) {
+            $user           = User::find($request['user_id']);
+            $notifications  = $user->notifications()->latest()->paginate(10);
+            $user->unreadNotifications->markAsRead();
+            $meta       = getBasicInfoPagantion($notifications);
+            $data       = getCollectionPagantion($notifications)->map(function ($notify) use($request){
+                return $this->responseNotification($notify);
+            });
+            return response()->json(
+                [
+
+                    'status' => true,
+                    'data' => ['notifications'=> $data],
+                    'msg'  =>"",
+                    'meta' => $meta
+                ]
+            );
+
+
+        }else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+
+    // delte notification
+    public function deleteNotifications(Request $request)
+    {
+
+        $validator=Validator::make($request->all(),[
+            'notification_id'   => 'required|exists:notifications,id',
+        ]);
+        if ($validator->passes()) {
+            \DB::delete("delete from notifications where id= ?",[$request['Notification_id']]);
+            $msg = $request["lang"] == "ar" ? " تم الحذف":"Sucessful delete";
+            return response()->json(['key'=>'success','value'=>'1',"msg"=>$msg,]);
+        }else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['key' => 'fail','value' => '0', 'msg' => $msg[0]]);
+                }
+            }
+        }
+
+
+    }
 
      // update profile
     public  function updateProfile(Request $request)
