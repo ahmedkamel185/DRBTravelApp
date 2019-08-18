@@ -154,10 +154,10 @@ class PublisherController extends Controller
              }
              $user = auth('publisher')->user();
 
-             if($user->verified == 0){
-                 $msg = $request['lang'] == 'ar' ? 'لم يتم تاكيد الحساب بعد.' : 'account not verfied .';
-                 return response()->json(['status'=>false,'msg'=>$msg]);
-             }
+//             if($user->verified == 0){
+//                 $msg = $request['lang'] == 'ar' ? 'لم يتم تاكيد الحساب بعد.' : 'account not verfied .';
+//                 return response()->json(['status'=>false,'msg'=>$msg]);
+//             }
 
              if($user->status == 0){
                  $msg = $request['lang'] == 'ar' ? 'المستخدم محظور حاليا يمكن التواصل مع الاداره.' : ' user has been blocked can contact with adminstration.';

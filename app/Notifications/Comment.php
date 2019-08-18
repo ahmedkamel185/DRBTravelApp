@@ -13,19 +13,19 @@ class Comment extends Notification
     use Queueable;
     public $user;
     public $type;
-    public $id;
+    public $pid;
     public $comment;
     /**
      * Create a new notification instance.
      *
      * @return void
      */
-    public function __construct($user , $type, $id, $comment)
+    public function __construct($user , $type, $pid, $comment)
     {
         //
         $this->user    = $user;
         $this->type    = $type;
-        $this->id      = $id;
+        $this->pid     = $pid;
         $this->comment =$comment;
     }
 
@@ -54,7 +54,7 @@ class Comment extends Notification
         $msg_ar    = Str::limit($this->comment->body, 20, ' (...)');
         $image     = asset('uploads/publishers') . '/' . $user->image;
         $data = [
-            'pid'     =>$this->id,
+            'pid'     =>$this->pid,
             'type'    => $this->type,
             'title_ar'=>$title_ar,
             'title_en'=>$title_en,
@@ -62,7 +62,7 @@ class Comment extends Notification
             'msg_en'  =>$msg_ar,
             'image'   => $image,
         ];
-//        send_FCM($this->user);
+        send_FCM($this->user, $data);
         return $data;
     }
 

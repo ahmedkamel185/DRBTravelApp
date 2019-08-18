@@ -15,6 +15,7 @@ use App\Models\Block;
 use App\Models\Follower;
 use URL;
 use App\Models\Publisher;
+use App\Models\StorePlace;
 use Image;
 use Validator;
 use File;
@@ -171,6 +172,53 @@ class TripController extends Controller
          $res['created_at']     = $like->created_at->format('d-m-Y h:i a');
          return $res;
     }
+
+    //=====================================================================
+    //response storeType
+    protected  function  responseStoreType($storeType)
+    {
+        $res['name_ar'] = $storeType['name_ar'];
+        $res['name_en'] = $storeType['name_en'];
+        $res['icon']    = asset('uploads/storeTypes').'/'.$storeType->icon;
+        return $res;
+
+    }
+
+    // rpsonse place
+    protected  function  responseStorePlace($storePlace)
+    {
+        $res['lat']        =   $storePlace['lat'];
+        $res['lng']        =   $storePlace['lng'];
+        $res['address']    =   $storePlace['address'];
+        $res['desc']       =   $storePlace['desc'];
+        $res['image']      =   asset('uploads/storePlace').'/'.$storePlace->image;
+        return $res;
+
+    }
+    // reponse store
+    protected function responseUserStore($user, $type=2)
+    {
+        $res["id"]              = $user->id;
+        $res["store_name"]      = $user->store_name;
+        $res["mobile"]          = $user->mobile;
+        $res["email"]           = $user->email;
+        $res["city"]            = $user->city;
+        $image                  = is_null($user['image'])? "default_image.png" : $user['image'];
+        $res['image']           = asset('uploads/publishers') . '/' . $image;
+        $res['status']          = is_null($user['status'])?1:$user['status'];
+        $res['verified']        = is_null($user['verified'])?1:$user['verified'];
+        $res['type']            = $type;
+        $res['storeType']       = $this->responseStoreType($user->StoreType);
+        return $res;
+    }
+    // repsonse near
+    protected function responsNear($place){
+        $res['places'] =  $this->responseStorePlace($place);
+        $res['store']  =  $this->responseUserStore($place->store);
+        return $res;
+    }
+    //============================================================
+
      /*================================*/
      // start trip
     public function startTrip(Request $request)
@@ -245,18 +293,28 @@ class TripController extends Controller
     public  function currentTrip(Request $request){
         $validator=Validator::make($request->all(),[
             'publisher_id'        => 'required|exists:publishers,id',
-
         ]);
         if ($validator->passes()) {
             $trip        = Trip::where('publisher_id', $request['publisher_id'])
                                 ->where('status', 0)->first();
             $data = [];
             if($trip){
-                $data  = $this->reponseTrip($trip, false);
+                $data      = $this->reponseTrip($trip, false);
+                $near_start= get_near_stores($trip->start_lat, $trip->start_lng,10);
+                $near_end  = get_near_stores($trip->end_lat, $trip->end_lng,10);
+                $all        = array_merge($near_end, $near_start);
+                $storePlaces  =  StorePlace::whereIn('id', $all)->get();
+                $dataPlace    = $storePlaces->map(function ($place){
+                    return $this->responsNear($place);
+                });
+
+                $res['trip']         = $data;
+                $res['nearStore']    = $dataPlace;
+
                 return response()->json(
                     [
                         'status' => true,
-                        'data'  => ['trip'=>$data],
+                        'data'  => ['currentTrip'=>$res],
                         'msg'   =>""
                     ]
                 );
@@ -285,13 +343,10 @@ class TripController extends Controller
 
     public  function getTrip(Request $request){
         $validator=Validator::make($request->all(),[
-            'publisher_id'        => 'required|exists:publishers,id',
             'trip_id'             => 'required|exists:trips,id'
-
         ]);
         if ($validator->passes()) {
             $trip        = Trip::where('id', $request['trip_id'])
-                ->where('publisher_id', $request['publisher_id'])
                 ->where('status', 1)->first();
             $data = [];
             if($trip){
@@ -299,7 +354,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => true,
-                        'data'  => ['trip'=>$data],
+                        'data'  => ['ended_trip'=>$data],
                         'msg'   =>""
                     ]
                 );
@@ -396,11 +451,12 @@ class TripController extends Controller
 
     // upload resource for trips
     public  function uploadResource(Request $request){
+
         $validator=Validator::make($request->all(),[
             'trip_id'        => 'required|exists:trips,id',
             'type'           => 'required|in:vedio,image',
             'desc'           => 'nullable',
-            'resource'       => 'required|max:30000000',
+            'resource'       => 'required',
             'lat'            => 'required',
             'lng'            => 'required',
             'address'        => 'required'
@@ -423,8 +479,10 @@ class TripController extends Controller
             else
             {
                 $vedio    = $request->resource;
-                $name     = date('d-m-y').time().rand().'.'.$vedio->getClientOriginalExtension();
-                $vedio->move(public_path('uploads/tripResources'), $name);
+                $path     = \Storage::putFile('photos', $vedio);
+                return response()->json(['path'=>$path]);
+//                $name     = date('d-m-y').time().rand().'.'.$vedio->getClientOriginalExtension();
+//                $vedio->move(public_path('uploads/tripResources'), $name);
             }
             $resource->resource = $name;
             $resource->save();
@@ -437,7 +495,7 @@ class TripController extends Controller
             return response()->json(
                 [
                     'status' => true,
-                    'data' => ['resource'=>""],
+                    'data' => ['resource'=>["id"=>null]],
                     'msg'=>$msg
                 ]
             );
@@ -484,9 +542,8 @@ class TripController extends Controller
             'user_id'        => 'required|exists:publishers,id'
 
         ]);
-        if ($validator->passes()) {
-            $trip                = Trip::where('id',$request['trip_id'])
-                                        ->where('publisher_id', $request['user_id'])->first();
+
+            $trip                = Trip::find($request['trip_id']);
             if($trip){
                 $data  =  $trip->resources->map(function ($resource){
                    return $this->responseResource($resource);
@@ -494,20 +551,11 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => true,
-                        'data'   => $data,
+                        'data'   => ['resources' => $data ],
                         'msg'    =>""
                     ]
                 );
-            }else{
-                $msg = $request['lang'] == 'ar' ? ' المستخدم لايملك هذه الرحله.' : ' user not owner the trip.';
-                return response()->json(
-                    [
-                        'status' => false,
-                        'data' => "",
-                        'msg'=>$msg
-                    ]
-                );
-            }
+
 
         }else{
             foreach ((array)$validator->errors() as $key => $value){
@@ -674,7 +722,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => true,
-                        'data' => "",
+                        'data' => ["ended_trip"=> ['id'=>null] ],
                         'msg'=>$msg
                     ]
                 );

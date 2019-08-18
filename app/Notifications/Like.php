@@ -64,6 +64,7 @@ class Like extends Notification
             'image'   => $image,
         ];
 //        send_FCM($this->user);
+        send_FCM($this->user, $data);
         return $data;
 
     }

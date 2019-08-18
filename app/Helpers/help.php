@@ -125,4 +125,17 @@ function send_FCM ($user, $data)
 //    dd($downstreamResponse);
 }
 
+// get near
+ function get_near_stores($lat , $lng, $disance=5, $unit='k'){
+
+     $type        = 6371;
+
+     if($unit=='m')
+         $type  = 3959;
+     $query = "SELECT id 
+                    , ( $type * acos ( cos ( radians(". $lat .") ) * cos( radians( lat ) ) * cos( radians( lng ) - radians(".  $lng .") ) + sin ( radians(". $lat .") ) * sin( radians( lat ) ) ) )
+                     AS `distance` FROM `store_places` where status='1' HAVING distance <= $disance  ";
+     $ids          =  collect(\DB::select($query))->pluck('id')->toArray();
+     return $ids;
+ }
 ?>

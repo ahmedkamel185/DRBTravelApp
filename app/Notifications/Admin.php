@@ -58,7 +58,7 @@ class Admin extends Notification
             'msg_en'  =>$this->msg_en,
             'image'   => $image,
         ];
-//        send_FCM($this->user);
+        send_FCM($this->user, $data);
         return $data;
     }
 
