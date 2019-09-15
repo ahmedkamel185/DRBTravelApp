@@ -27,4 +27,8 @@ class Follower extends Model
     {
         return Self::where('follow_id', $follow_id)->pluck('follower_id')->toArray();
     }
+    static function buldFolloweId($follower_id)
+    {
+        return Self::where('follower_id', $follower_id)->pluck('follow_id')->toArray();
+    }
 }

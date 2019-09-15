@@ -2,6 +2,11 @@
 @section('cs')
 
 @endsection
+@section('bread')
+    <li><a href="{{route('store.index')}}" style="color: white">Manage Service Providers</a></li>
+    <li><a href="{{route('store.show',['id'=>$store->id])}}" style="color: white">Store Provider Details</a></li>
+    <li class="active" style="color: white;font-size: larger">Add New Address </li>
+@endsection
 @section('content')
     @if(session()->has('success'))
         <h2 class="page-header">Manage In-App Content</h2>

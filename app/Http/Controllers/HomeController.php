@@ -7,6 +7,7 @@ use App\Models\Publisher;
 use App\Models\Store;
 use App\Models\Trip;
 use App\Models\Risk;
+use App\Models\Contact;
 class HomeController extends Controller
 {
     /**
@@ -32,6 +33,8 @@ class HomeController extends Controller
             ->with('trip_count',Trip::all()->count())
             ->with('risk_count',Risk::all()->count())
 
+
             ;
     }
+
 }

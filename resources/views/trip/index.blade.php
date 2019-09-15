@@ -3,13 +3,23 @@
 
 
 @endsection
+@section('bread')
+    <li class="active" style="color: white;font-size: larger">Manage More Information</li>
+
+    <li class="active" style="color: white;font-size: larger">Manage Tips</li>
+@endsection
 @section('content')
+    <p>Total Trips:  <span style="color: #1d68a7">{{$trips_count}}</span></p>
 
     @foreach($trips as $trip)
         <div class="panel panel-primary">
-            <div class="panel-heading">User Details</div>
+            <div class="panel-heading">User Details
+            </div>
             <div class="panel-body">
-                <a href="{{route('trip.delete',['id'=>$trip->id])}}" class="fa fa-trash" style="float: right"></a>
+               <a href="#" class="fa fa-share-alt" style="float: right"> <span>{{\App\Models\Publishing::where('trip_id', $trip->id)->whereNotNull('sharer_id')->count()}}</span></a><br>
+                <a href="#" class="fa fa-thumbs-up" style="float: right"> <span>{{\App\Models\Publishing::where('trip_id', $trip->id)->where('publisher_id',$trip->publisher->id)->first()->likes->count()}}</span></a>
+
+
 
                 <div class="col-md-3">
                                     <img src="{{asset('/uploads/publishers/'.$trip->publisher->image)}}"
@@ -42,6 +52,16 @@
                                 <p><strong><i class="fa fa-map-marker red" aria-hidden="true"></i> End Address</strong>
                                     <br>{{$trip->end_address}} </p>
                             </li>
+
+                            <li>
+                                <p><strong><i class="fa fa-clock-o" aria-hidden="true"></i>Started At</strong>
+                                    <br>{{$trip->created_at}} </p>
+                            </li>
+                            <li>
+                                <p><strong><i class="fa fa-clock-o" aria-hidden="true"></i>Ended At</strong>
+                                    <br>{{$trip->ended_at}} </p>
+                            </li>
+
                         </div>
 
 
@@ -52,6 +72,7 @@
 
                 </div>
 
+                <a href="{{route('trip.delete',['id'=>$trip->id])}}" class="fa fa-trash" style="float: right"></a>
 
             </div>
         </div>

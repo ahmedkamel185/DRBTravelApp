@@ -131,6 +131,7 @@ return [
         "sender_id"=>"المرسل",
         "reciver_id"=>"المرسل له",
 		'first_name' => 'الاسم',
+        'place_id'=>'المكان',
 		'last_name' => 'اسم العائلة',
 		'password' => 'كلمة السر',
 		'password_confirmation' => 'تأكيد كلمة السر',

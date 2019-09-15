@@ -15,9 +15,10 @@ class CreateLogActivitiesTable extends Migration
     {
         Schema::create('log_activities', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->text('event_ar')->nullable();
-            $table->text('event_en')->nullable();
             $table->bigInteger('publisher_id')->unsigned();
+            $table->bigInteger('action_id')->unsigned();
+            $table->string("type");
+            $table->enum("status",['publsihing', 'publisher','suggest'])->default('publsihing');
             $table->foreign('publisher_id')->references('id')
                 ->on('publishers')->onDelete('cascade');
             $table->timestamps();

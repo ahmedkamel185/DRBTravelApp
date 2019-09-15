@@ -19,8 +19,12 @@ class CreateSettingsTable extends Migration
             $table->text('about_en');
             $table->text('terms_ar');
             $table->text('terms_en');
-            $table->string('contact_us_ar');
-            $table->string('contact_us_en');
+            $table->string('mobile');
+            $table->string('whats')->nullable();
+            $table->string('youtube')->nullable();
+            $table->string('facebook')->nullable();
+            $table->string('twitter')->nullable();
+            $table->string('linked')->nullable();
             $table->timestamps();
         });
     }

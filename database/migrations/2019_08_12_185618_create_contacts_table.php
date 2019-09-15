@@ -20,6 +20,8 @@ class CreateContactsTable extends Migration
             $table->string('subject');
             $table->text('desc');
             $table->integer('seen')->default(0);
+            $table->bigInteger('publisher_id')->unsigned();
+            $table->foreign('publisher_id')->references('id')->on('publishers')->onDelete('cascade');
             $table->timestamps();
         });
     }

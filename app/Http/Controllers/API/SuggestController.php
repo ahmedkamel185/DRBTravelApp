@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\API;
 
+use App\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Suggest;
+use App\Models\Publisher;
 use Image;
 use Validator;
 use File;
@@ -32,16 +34,18 @@ class SuggestController extends Controller
         $res['likes_count']     = $suggest->likes->count();
         $res['likes_latest']    = $res['likes_count'] >0? $suggest->likes()->latest()->first()->user->display_name:"";
         $res['created_at']      = $suggest->created_at->format('d-m-Y h:i a');
+        $res['publisher']       = Publisher::find($suggest->user_id);
         return $res;
     }
 
     // response comment
-    protected function   responseComment($comment){
+    protected function   responseComment($comment,$user_id =0){
         $res['id']             =  $comment->id;
         $res['body']           =  $comment->body;
         $res['user']           =  $this->responseUser($comment->user);
         $res['suggest_id']     = $comment->suggest_id;
         $res['created_at']     = $comment->created_at->format('d-m-Y h:i a');
+        $res['status']         = $user_id == 0? true : $user_id==$comment->user_id;
         return $res;
     }
     // response like
@@ -83,7 +87,8 @@ class SuggestController extends Controller
             $suggest->desc      = $request['desc'];
             $photo=$request->image;
             $name = date('d-m-y').time().rand().'.'.$photo->getClientOriginalExtension();
-            Image::make($photo)->save('uploads/tripResources/'.$name);
+//            Image::make($photo)->save('uploads/suggests/'.$name);
+            $photo->move(public_path('uploads/suggests'), $name);
             $suggest->image      = $name;
             $suggest->save();
             publisher_log(
@@ -95,7 +100,7 @@ class SuggestController extends Controller
             return response()->json(
                 [
                     'status' => true,
-                    'data' => ['suggest'=>""],
+                    'data' => ['suggest'=>['id'=>null]],
                     'msg'=>$msg
                 ]
             );
@@ -108,6 +113,18 @@ class SuggestController extends Controller
             }
         }
     }
+
+
+    // repsonse near
+    protected function responsNear($place,$lat,$lng ,$unit){
+        $res['suggest'] =  $this->responseSuggest($place);
+//        $res['publisher']  =  $this->responseUser($place->publisher);
+        $res['disance']=  distance($lat , $lng ,$place,$unit);
+        return $res;
+    }
+
+
+
 
     // edit
     public  function editSuugest(Request $request){
@@ -128,7 +145,7 @@ class SuggestController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => "",
+                        'data' => ['suggest'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -142,15 +159,17 @@ class SuggestController extends Controller
                 \File::delete('uploads/suggests/'.$suggest->name);
                 $photo=$request->image;
                 $name = date('d-m-y').time().rand().'.'.$photo->getClientOriginalExtension();
-                Image::make($photo)->save('uploads/suggests/'.$name);
+//                Image::make($photo)->save('uploads/suggests/'.$name);
+                $photo->move(public_path('uploads/suggests'), $name);
                 $suggest->image      = $name;
+
             }
             $suggest->save();
             $msg = $request['lang'] == 'ar' ? ' تم التعديل بنجاح.' : ' sucessfull edit .';
             return response()->json(
                 [
                     'status' => true,
-                    'data' => ['suggest'=>""],
+                    'data' => ['suggest'=>['id'=>null]],
                     'msg'=>$msg
                 ]
             );
@@ -178,7 +197,7 @@ class SuggestController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => "",
+                        'data' => ['suggest'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -194,7 +213,7 @@ class SuggestController extends Controller
             return response()->json(
                 [
                     'status' => true,
-                    'data' => ['suggest'=>""],
+                    'data' => ['suggest'=>['id'=>null]],
                     'msg'=>$msg
                 ]
             );
@@ -252,9 +271,9 @@ class SuggestController extends Controller
             return response()->json(
                 [
                     'status' => true,
-                    'data' => ['suggest'=>$data],
+                    'data' => ["suggests"=>['suggests'=>$data,'meta'=>$meta]],
                     'msg'  =>"" ,
-                    'meta' => $meta
+//                    'meta' => $meta
                 ]
             );
         }
@@ -283,7 +302,7 @@ class SuggestController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => "",
+                        'data' => ['suggest'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -291,7 +310,7 @@ class SuggestController extends Controller
             $suggests           = Suggest::where('user_id', $request['publisher_id'] )->simplePaginate(10);
             $meta               = getBasicInfoPagantion($suggests);
             $data               = getCollectionPagantion($suggests)->map(function ($suggest) use($request){
-                $this->responseSuggest($suggest, $request['user_id']);
+              return   $this->responseSuggest($suggest, $request['user_id']);
             });
             return response()->json(
                 [
@@ -421,7 +440,7 @@ class SuggestController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => "",
+                        'data' => ['comment'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -449,6 +468,7 @@ class SuggestController extends Controller
             $comment                = Comment::find($request['comment_id']);
             if( $comment->user_id == $request['user_id'] ){
                 $comment->body    = $request['body'];
+                $comment->save();
                 return response()->json(
                     [
                         'status' => true,
@@ -461,7 +481,7 @@ class SuggestController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => "",
+                        'data' => ['comment'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -489,8 +509,8 @@ class SuggestController extends Controller
 
             // check privacy
             if($suggest->privacy != "private"){
-                $data  = $suggest->comments->map(function ($comment){
-                    return $this->responseComment($comment);
+                $data  = $suggest->comments->map(function ($comment) use($request){
+                    return $this->responseComment($comment, $request['user_id']);
                 }) ;
                 return response()->json(
                     [
@@ -504,7 +524,7 @@ class SuggestController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => "",
+                        'data' => ['comments'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -564,7 +584,7 @@ class SuggestController extends Controller
                 return response()->json(
                     [
                         'status' => true,
-                        'data'   => "",
+                        'data'   => ['likes'=>['id'=>null]],
                         'msg'    =>$msg
                     ]
                 );
@@ -609,6 +629,54 @@ class SuggestController extends Controller
             }
         }
     }
+
+
+
+    //=========================================
+    public  function nearSuggest(Request $request){
+        $validator = Validator::make($request->all(),
+            [
+                'lat'                 => 'required',
+                'lng'                 => 'required',
+                'distance'            => 'nullable',
+                'type'                => 'nullable|in:k,m'
+            ]);
+
+        if ($validator->passes()) {
+            $lat        = $request['lat'];
+            $lng        = $request['lng'];
+            $disance    = is_null($request['distance'])?5:(int)$request['distance'];
+            $type        = 6371;
+            if($request['type']=='m')
+                $type  = 3959;
+            $query = "SELECT id 
+                    , ( $type * acos ( cos ( radians(". $lat .") ) * cos( radians( lat ) ) * cos( radians( lng ) - radians(".  $lng .") ) + sin ( radians(". $lat .") ) * sin( radians( lat ) ) ) )
+                     AS `distance` FROM `suggests`  HAVING distance <= $disance ";
+            $ids          =  collect(\DB::select($query))->pluck('id')->toArray();
+
+            $storePlaces  =  Suggest::whereIn('id', $ids)->get();
+
+            $unit         = $request['type'];
+            $data         = $storePlaces->map(function ($place) use ($lat, $lng ,$unit){
+                return $this->responsNear($place,$lat, $lng, $unit);
+            });
+            return response()->json(
+                [
+                    'status' => true,
+                    'data'  => ["near"=>$data],
+                    'msg'   => ""
+                ]
+            );
+        }else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+
+
 
 
 

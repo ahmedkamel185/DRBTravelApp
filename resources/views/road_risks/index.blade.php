@@ -91,11 +91,18 @@
 
 
 @endsection
+@section('bread')
+    <li class="active" style="color: white;font-size: larger">Manage More Information</li>
+    <li class="active" style="color: white;font-size: larger">Manage Risks</li>
+@endsection
 @section('content')
-
-    <div class="box">
+<div>
         <div class="box-header">
             <h1 style="color: blue" class="box-title">Manage Risks</h1>
+            <p>Total no of Risks Reported: <span style="color: #1d68a7">{{$risks_count}}</span></p>
+            <a href="{{route('road.risks')}}" class="fa fa-plus-circle" style="float: right">List Of Risks</a>
+
+
         </div>
         <!-- /.box-header -->
         <div class="box-body">
@@ -119,7 +126,7 @@
                     <td>{{$risk->id}}</td>
                         <td>{{$risk->publisher->username}}</td>
                         <td>{{$risk->publisher->email}}</td>
-                        <td>{{$risk->type}}</td>
+                        <td>{{$risk->riskType->name_en}}</td>
                         <td>{{$risk->address}}</td>
                         <td>{{$risk->created_at}}</td>
                         @if($risk->status)
@@ -143,23 +150,11 @@
 
 
                 </tbody>
-                <tfoot>
-                <tr>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                </tr>
-                </tfoot>
+
             </table>
         </div>
     </div>
         <!-- /.box-body -->
-    </div>
 
 
 

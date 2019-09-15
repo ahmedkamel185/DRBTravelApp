@@ -52,9 +52,9 @@ class Admin extends Notification
         $data = [
             'pid'      =>-1,
             'type'    => "admin",
-            'title_ar'=>$title_ar,
-            'title_en'=>$title_en,
-            'msg_ar'  =>$this->msg_ar,
+            'title_ar'=>$this->msg_ar,
+            'title_en'=>$this->msg_ar,
+            'msg_ar'  =>$this->msg_en,
             'msg_en'  =>$this->msg_en,
             'image'   => $image,
         ];

@@ -59,17 +59,23 @@ Route::group( [
 
     Route::post('search-publisher','PublisherController@searchPublisher');
 
+    Route::post('random-publisher','PublisherController@randomUsers');
+
     Route::post('logout','PublisherController@logout');
 
     Route::post('send-emailReset','PublisherController@restPasswordMail');
 
-    Route::post('ceheck-tempPassword','PublisherController@checkTemploaryPassword');
+    Route::post('check-tempPassword','PublisherController@checkTemploaryPassword');
 
     Route::post('reset-password','PublisherController@resetPassword');
 
     Route::post('get-notifications','PublisherController@getNotifications');
 
     Route::post('delte-notification','PublisherController@deleteNotifications');
+
+    Route::post('log-action','PublisherController@logger');
+
+    Route::post('echo','PublisherController@test');
 
 });
 
@@ -93,6 +99,8 @@ Route::group( [
     Route::post('login', 'StoreController@login');
 
     Route::post('get','StoreController@getUser');
+
+    Route::post('store-profile','StoreController@getprofile');
 
     Route::post('update-profile', 'StoreController@updateProfile');
 
@@ -135,6 +143,8 @@ Route::group( [
 {
     Route::post('index','storePlacesController@index');
 
+    Route::post('get-place','storePlacesController@getPlace');
+
     Route::post('add-store-place','storePlacesController@addStorePlace');
 
     Route::post('delete-store-place','storePlacesController@deleteStorePlace');
@@ -143,7 +153,9 @@ Route::group( [
 
     Route::post('store-near','storePlacesController@nearPlaces');
 
+    Route::post('get-three','storePlacesController@getThree');
 
+    Route::post('get-three-near','storePlacesController@getThreeNear');
 
 
 
@@ -185,6 +197,9 @@ Route::group( [
 
     Route::post('list-likes', 'SuggestController@getLikes');
 
+    Route::post('suggest-near','SuggestController@nearSuggest');
+
+
 
 });
 
@@ -205,11 +220,26 @@ Route::group( [
 {
       Route::post('get-storeTypes', 'BasicInfoController@getStoresTypes');
 
-      Route::post('get-terms', 'BasicInfoController@getTerms');
+      Route::post('get-riskTypes', 'BasicInfoController@getRiskTypes');
 
-      Route::post('get-about', 'BasicInfoController@getAbout');
 
-      Route::post('get-contact', 'BasicInfoController@getContact');
+     Route::post('get-settings', 'BasicInfoController@getSettings');
+//      Route::post('get-terms', 'BasicInfoController@getTerms');
+
+//      Route::post('get-about', 'BasicInfoController@getAbout');
+//
+//      Route::post('get-mobile', 'BasicInfoController@getMobile');
+//
+//      Route::post('get-whats', 'BasicInfoController@getWhats');
+//
+//      Route::post('get-youtube', 'BasicInfoController@getYoutube');
+//
+//      Route::post('get-facebook', 'BasicInfoController@getFacebook');
+//
+//      Route::post('get-twitter', 'BasicInfoController@getTwitter');
+//
+//      Route::post('get-linked', 'BasicInfoController@getLinked');
+
 });
 
 /*=========================*/
@@ -312,11 +342,16 @@ Route::group( [
 
     Route::post('show-risks','RisksController@showRisks');
 
+    Route::post('get-risk','RisksController@getRisk');
+
     Route::post('edit-risks','RisksController@editRisks');
 
     Route::post('delete-risks','RisksController@deleteRisks');
 
     Route::post('show-types-risks','RisksController@showTypeRisks');
+
+    Route::post('risk-near','RisksController@nearRisks');
+
 
 });
 
@@ -346,7 +381,7 @@ Route::group( [
 
 
 /********************************
- *      Risk comment routes
+ *      setting comment routes
  *      API
  * ******************************/
 

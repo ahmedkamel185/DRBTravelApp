@@ -46,7 +46,6 @@ $factory->define(\App\Models\Store::class, function (Faker $faker) {
         'city' => $faker->streetName,
         'email' => $faker->email,
         'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
-        'address' => $faker->streetAddress,
         'store_type_id'=>'1',
     ];
 });

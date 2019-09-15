@@ -2,15 +2,13 @@
 @section('cs')
 
 @endsection
+@section('bread')
+    <li><a href="{{route('store.index')}}" style="color: white">Manage Service Providers</a></li>
+    <li class="active" style="color: white;font-size: larger"> Add New Service Provider </li>
+@endsection
+
 @section('content')
-    @if(session()->has('success'))
-        <h2 class="page-header">Manage In-App Content</h2>
-        <div class="alert alert-success alert-dismissible">
-            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-            <h4><i class="icon fa fa-check"></i></h4>
-            {{session()->get('success')}}
-        </div>
-    @endif
+
     <div class="row">
         <!-- left column -->
         <div class="col-md-12">
@@ -21,7 +19,7 @@
                 </div>
                 <!-- /.box-header -->
                 <!-- form start -->
-                <form role="form" action="{{route('store.store')}}" method="post">
+                <form role="form" action="{{route('store.store')}}" method="post" enctype="multipart/form-data">
                     @csrf
                     <div class="box-body">
                         <div class="form-group">
@@ -58,6 +56,11 @@
                             <label for="city">City</label>
                             <input type="text" name="city" class="form-control" id="city"
                                    placeholder="city" value="{{old('city')}}">
+                        </div>
+                        <div class="form-group">
+                            <label for="image">Image</label>
+                            <input type="file" name="image" class="form-control" id="image"
+                                    value="">
                         </div>
 
 

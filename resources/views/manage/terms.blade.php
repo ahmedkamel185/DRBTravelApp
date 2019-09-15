@@ -2,6 +2,10 @@
 @section('cs')
 
 @endsection
+@section('bread')
+    <li><a href="{{route('manage.index')}}" style="color: white">Manage App Setting</a></li>
+    <li class="active" style="color: white;font-size: larger"> Terms </li>
+@endsection
 @section('content')
     <form action="{{route('manage.terms.update',['id'=>$terms->id])}}" method="post">
         @csrf

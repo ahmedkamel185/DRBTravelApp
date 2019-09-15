@@ -21,7 +21,6 @@ class CreateStores extends Migration
             $table->string('city');
             $table->string('email')->unique();
             $table->string('password');
-            $table->string('address');
             $table->string("temporay_password")->nullable();
             $table->string('device_id')->nullable();
             $table->string('device_type')->nullable();

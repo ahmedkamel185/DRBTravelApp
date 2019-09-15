@@ -91,12 +91,16 @@
     </style>
 
 @endsection
+@section('bread')
+    <li class="active" style="color: white;font-size: larger">Manage Service Providers</li>
+@endsection
 @section('content')
 
-    <div class="box">
         <div class="box-header">
-            <h1 style="color: blue" class="box-title">Manage Service Providers</h1>
+            <h2 style="color: blue" class="box-title">Manage Service Providers</h2>
+            <p>Total Service Providers:  <span style="color: #1d68a7">{{$store_count}}</span></p>
             <a href="{{route('store.addStore')}}" class="fa fa-plus-circle" style="float: right">Service Provider</a>
+            <a href="{{route('store.addStoreType')}}" class="fa fa-plus-circle" style="float: right">Add Store type</a>
         </div>
         <!-- /.box-header -->
         <div class="box-body">
@@ -106,8 +110,7 @@
                     <th>S.NO.</th>
                     <th>Name</th>
                     <th>Type</th>
-                    <th>Address</th>
-                    <th>Featured</th>
+{{--                    <th>Featured</th>--}}
                     <th>Verification</th>
                     <th>Status</th>
                     <th>Show</th>
@@ -119,8 +122,7 @@
                         <td> {{$store->id}}</td>
                         <td> {{$store->store_name}}</td>
                         <td> {{$store->StoreType->name_en}}</td>
-                        <td> {{$store->address}}</td>
-                        <td>#</td>
+{{--                        <td>#</td>--}}
                         <td>
                             <label class="switch">
                                 <input data-id="{{$store->id}}"
@@ -153,19 +155,9 @@
 
 
                 </tbody>
-                <tfoot>
-                <tr>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                </tr>
-                </tfoot>
             </table>
         </div>
         <!-- /.box-body -->
-    </div>
 
 
 @endsection
@@ -217,7 +209,7 @@
 
             })
 
-        })
+        });
 
 
         //==================================

@@ -49,7 +49,7 @@ class Comment extends Notification
     public function toDatabase()
     {
         $user      = $this->comment->user;
-        $title_ar  = " قام  {$user->display_name} بتعليق على منشورك" ;
+        $title_ar  = " قام  {$user->display_name} بتعليق على منشورك " ;
         $title_en  = "{$this->user->display_name} do the comment in post" ;
         $msg_ar    = Str::limit($this->comment->body, 20, ' (...)');
         $image     = asset('uploads/publishers') . '/' . $user->image;

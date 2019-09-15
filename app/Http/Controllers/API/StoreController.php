@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Store;
+use function foo\func;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Str;
@@ -26,7 +27,23 @@ class StoreController extends Controller
     {
 
     }
+    /***********************************
+     *
+     * *************************/
+    // rpsonse place
+    protected  function  responseStorePlace($storePlace)
+    {
+        $res['id']         =   $storePlace['id'];
+        $res['lat']        =   $storePlace['lat'];
+        $res['lng']        =   $storePlace['lng'];
+        $res['address']    =   $storePlace['address'];
+        $res['desc']       =   $storePlace['desc'];
+        $res['image']      =   asset('uploads/storePlace').'/'.$storePlace->image;
+        return $res;
 
+    }
+
+    /*==========================*/
     protected function responseUser($user, $type=2)
     {
         $res["id"]              = $user->id;
@@ -81,7 +98,6 @@ class StoreController extends Controller
             'password'         => 'required|min:6|max:190',
             'device_id'        => 'required',
             'device_type'      => 'required|in:ios,android',
-            'address'          => 'required'
         ]);
         if ($validator->passes()) {
             $user               = new User;
@@ -93,11 +109,10 @@ class StoreController extends Controller
             $user->device_id    = $request['device_id'];
             $user->device_type  = $request['device_type'];
             $user->store_type_id= $request['store_type_id'] ;
-            $user->address      = $request['address'] ;
             $user->save();
             return response()->json(
                 [
-                    
+
                     'status' => true,
                     'data' => ['store'=>$this->responseUser($user)],
                     'msg'=>""
@@ -141,7 +156,7 @@ class StoreController extends Controller
 
             return response()->json(
                 [
-                    
+
                     'status' => true,
                     'data' => ['store'=>$this->responseUser($user)],
                     'msg'=>""
@@ -168,7 +183,7 @@ class StoreController extends Controller
 
             return response()->json(
                 [
-                    
+
                     'status' => true,
                     'data' => ['store'=>$this->responseUser($user)],
                     'msg'=>""
@@ -226,7 +241,7 @@ class StoreController extends Controller
             'notification_id'   => 'required|exists:notifications,id',
         ]);
         if ($validator->passes()) {
-            \DB::delete("delete from notifications where id= ?",[$request['Notification_id']]);
+            \DB::delete("delete from notifications where id= ?",[$request['notification_id']]);
             $msg = $request["lang"] == "ar" ? " تم الحذف":"Sucessful delete";
             return response()->json(['key'=>'success','value'=>'1',"msg"=>$msg,]);
         }else{
@@ -272,7 +287,8 @@ class StoreController extends Controller
                 }
 
                 $name = date('d-m-y').time().rand().'.'.$photo->getClientOriginalExtension();
-                Image::make($photo)->save('uploads/stores/'.$name);
+//                Image::make($photo)->save('uploads/stores/'.$name);
+                $photo->move(public_path('uploads/stores'), $name);
                 $user->image = $name;
 
             }
@@ -462,6 +478,40 @@ class StoreController extends Controller
             );
             $msg = $lang == "ar"? "تم تغير كلمة المرور":"change the password sucessfull";
             return response()->json(['status'=>true,'data' => ["publisher"=>""], 'msg' => $msg]);
+        }else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+
+
+
+    // adation
+    // get user profile
+    public function getprofile(Request $request){
+        $validator=Validator::make($request->all(),[
+            'store_id'          => 'required|exists:stores,id',
+        ]);
+        if ($validator->passes()) {
+            $user     = User::find($request['store_id']);
+            $data     = $this->responseUser($user);
+            $data['places'] = $user->storePlaces->map(function ($store){
+                return $this->responseStorePlace($store);
+            })->toArray();
+
+            return response()->json(
+                [
+
+                    'status' => true,
+                    'data' => ['store-profile'=>$data],
+                    'msg'=>""
+                ]
+            );
+
+
         }else{
             foreach ((array)$validator->errors() as $key => $value){
                 foreach ($value as $msg){

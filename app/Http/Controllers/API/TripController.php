@@ -23,6 +23,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Client;
 use App\Notifications\Comment as commentNotify;
 use App\Notifications\Like as LikeNotify;
+use App\Notifications\ShareNotification;
 
 class TripController extends Controller
 {
@@ -50,20 +51,22 @@ class TripController extends Controller
             $res['publisher']      = $this->responseUser($trip->publisher);
 //         else
 //             $res['publisher_id']  = $trip->publisher_id;
-         $res['created_at']     = $trip->created_at->format('d-m-Y h:i a');
+         $res['created_at']     =strtotime($trip->created_at) * 1000;
+
          if($trip->status == 1)
          {
              $res['desc']       = is_null($trip->desc)? "":$trip->desc;
-             $res['ended_at']   = empty($trip->ended_at)?" ": $trip->ended_at->format('d-m-Y h:i a');
-             $interval          = $trip->created_at->diff($trip->ended_at);
-             $duration          = [
-                 'day'        => $interval->format('%a'),
-                 'month'     => $interval->format('%m'),
-                 'hours'     => $interval->format('%h'),
-                 'minutes'   => $interval->format('%i'),
-                 'years'     => $interval->format('%y')
-             ];
-             $res['duration']= $duration;
+             $res['ended_at']   = strtotime( empty($trip->ended_at)?" ": $trip->ended_at) * 1000;
+
+//             $interval          = $trip->created_at->diff($trip->ended_at);
+//             $duration          = [
+//                 'day'        => $interval->format('%a'),
+//                 'month'     => $interval->format('%m'),
+//                 'hours'     => $interval->format('%h'),
+//                 'minutes'   => $interval->format('%i'),
+//                 'years'     => $interval->format('%y')
+//             ];
+//             $res['duration']= $duration;
          }
 
          return $res;
@@ -81,13 +84,14 @@ class TripController extends Controller
         return $res;
     }
 
-    protected function responseUserProfile($user, $userSeen_id)
+    protected function responseUserProfile($user , $userSeen_id)
     {
 
         $res["id"]              = $user->id;
         $res["username"]        = $user->username;
         $res["display_name"]    = $user->display_name;
         $res["mobile"]          = $user->mobile;
+        $res['trips_count']     = Publishing::where('publisher_id',$user->id)->orWhere('sharer_id',$user->id)->count();
         $res["email"]           = $user->email;
         $res["city"]            = $user->city;
         $res['bio']             = is_null($user['bio'])?"":$user['bio'];
@@ -98,7 +102,7 @@ class TripController extends Controller
         $res['follow_status']   = $user->follows()->where('follower_id', $userSeen_id)->count() > 0;
         $res['block_status']    = $user->blockeds()->where('user_id', $userSeen_id)->count() > 0;
         $res['follower']        = $user->follows()->count();
-        $res['follow']         = $user->followers()->count();
+        $res['follow']          = $user->followers()->count();
         $res['type']            = 1;
         $res['notification_count']= $user->unreadNotifications()->count();
         return $res;
@@ -113,6 +117,7 @@ class TripController extends Controller
         $res['lat']         = $resource['lat'];
         $res['lng']         = $resource['lng'];
         $res['address']     = $resource['address'];
+        $res['desc']        = is_null($resource['desc'])? "":$resource['desc'];
         $res['created_at']  = $resource->created_at->format('d-m-Y h:i a');
         return $res;
     }
@@ -121,9 +126,10 @@ class TripController extends Controller
     protected function  responsePublishing($publishing, $user_id =0){
          $res['id']         = $publishing->id;
          $res['status']     = $publishing->status;
+         $res['block']      = $publishing->block;
          $res['privacy']    = $publishing->privacy;
          $res['postTrip']       = $this->reponseTrip($publishing->trip);
-         $res['sharer']     = "";
+         $res['isshare']      = false;
          $res['comments']   = $publishing->comments->count();
          $res['likes_count']= $publishing->likes->count();
          $res['likes_latest']= $res['likes_count'] >0? $publishing->likes()->latest()->first()->user->display_name:"";
@@ -136,23 +142,28 @@ class TripController extends Controller
          if($publishing->sharer_id)
          {
              $res['sharer']     = $this->responseUser($publishing->sharer);
+             $res['isshare']    = true;
          }
          if($user_id){
              $res['likes_status']  = $publishing->likes()->where('user_id', $user_id)->count() > 0;
              $res['fav_status']    = $publishing->favourits()->where('user_id', $user_id)->count() > 0;
          }
-        $res['created_at'] = $publishing->created_at->format('d-m-Y h:i a');
+        $res['created_at'] =strtotime( $publishing->created_at) * 1000;
+
         return $res;
     }
 
     // response comment
-    protected function   responseComment($comment){
+    protected function   responseComment($comment , $user_id=0){
          $res['id']             =  $comment->id;
          $res['body']           =  $comment->body;
          $res['user']           =  $this->responseUser($comment->user);
          $res['publishing_id']  = $comment->publishing_id;
-         $res['created_at']     = $comment->created_at->format('d-m-Y h:i a');
-         return $res;
+         if($user_id)
+             $res['status']     = $comment->user_id == $user_id;
+         $res['created_at']     =  strtotime($comment->created_at) * 1000;
+
+        return $res;
     }
 
     // response share-user
@@ -387,7 +398,7 @@ class TripController extends Controller
             'publisher_id'   => 'required|exists:publishers,id',
             'desc'           => 'nullable',
             'privacy'        => 'required|in:public,private,flowers',
-            'status'         =>  'required|in:0,1' // 0 for not publsihin now  1 publishing now
+            'status'         =>  'required|in:0,1,2' // 0 for not publsihin now  1 publishing now ,2for cancel
 
         ]);
         if ($validator->passes()) {
@@ -474,15 +485,14 @@ class TripController extends Controller
             if($request['type'] == "image"){
                 $photo=$request->resource;
                 $name = date('d-m-y').time().rand().'.'.$photo->getClientOriginalExtension();
-                Image::make($photo)->save('uploads/tripResources/'.$name);
+//                Image::make($photo)->resize(800, 500)->save('uploads/tripResources/'.$name);
+                 $photo->move(public_path('uploads/tripResources'), $name);
             }
             else
             {
                 $vedio    = $request->resource;
-                $path     = \Storage::putFile('photos', $vedio);
-                return response()->json(['path'=>$path]);
-//                $name     = date('d-m-y').time().rand().'.'.$vedio->getClientOriginalExtension();
-//                $vedio->move(public_path('uploads/tripResources'), $name);
+                $name     = date('d-m-y').time().rand().'.'.$vedio->getClientOriginalExtension();
+                $vedio->move(public_path('uploads/tripResources'), $name);
             }
             $resource->resource = $name;
             $resource->save();
@@ -646,8 +656,9 @@ class TripController extends Controller
             $trip                = Trip::where('id',$request['trip_id'])
                 ->where('publisher_id', $request['user_id'])->first();
             if($trip){
-                deleteTrip($trip);
-                publisher_log(
+                $trip->delete();
+                    deleteTrip($trip);
+                    publisher_log(
                     $request['user_id'],
                     ' لقد قمت بحذف رحله ',
                     'you delete trip'
@@ -656,7 +667,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => true,
-                        'data' => ['resource'=>""],
+                        'data' => ['trip'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -665,7 +676,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => ['resource'=>""],
+                        'data' => ['trip'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -761,11 +772,11 @@ class TripController extends Controller
             if($trip){
                 $trip->desc  = $request['desc'];
                 $trip->update();
-                $msg = $request['lang'] == 'ar' ? ' تم التعديل.' : ' update sucessful.';
+                $msg = $request['lang'] == 'ar' ? ' تم التعديل.' : ' update successful.';
                 return response()->json(
                     [
                         'status' => true,
-                        'data' => "",
+                        'data' => ['trip'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -774,7 +785,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => "",
+                        'data' => ['trip'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -813,7 +824,7 @@ class TripController extends Controller
                     return response()->json(
                         [
                             'status' => false,
-                            'data' => "",
+                            'data' => ['trip'=>['id'=>null]],
                             'msg'=>$msg
                         ]
                     );
@@ -826,7 +837,7 @@ class TripController extends Controller
                     return response()->json(
                         [
                             'status' => false,
-                            'data' => "",
+                            'data' => ['trip'=>['id'=>null]],
                             'msg'=>$msg
                         ]
                     );
@@ -845,10 +856,11 @@ class TripController extends Controller
                     ' لقد قمت بمشاركة رحله ل '.$publishing->publisher->display_name,
                     'you share the trip to'.$publishing->publisher->display_name
                 );
+                $publishing->publisher->notify(new ShareNotification($publishing->publisher, $publishing->sharer));
                 return response()->json(
                     [
                         'status' => true,
-                        'data' => "",
+                        'data' => ['trip'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -857,7 +869,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => "",
+                        'data' => ['trip'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -881,10 +893,34 @@ class TripController extends Controller
         ]);
         if ($validator->passes()) {
             $publishing                = Publishing::find($request['publishing_id']);
+            $blocks       = Block::buldBlockId($request['user_id']);
+            $blockingMe   = Block::buldBlockerId($request['user_id']);
+            $allBlocks    = array_merge($blocks, $blockingMe);
+            if(in_array($publishing->publisher_id, $allBlocks) || in_array($publishing->sharer_id, $allBlocks))
+            {
+                $msg = $request['lang'] == 'ar' ? ' ليس لديك صلاحيه للمشاهدة المنشور .' : ' privacy not allow you to show post.';
+                return response()->json(
+                    [
+                        'status' => false,
+                        'data' => ['posted-trip'=>['id'=>null]],
+                        'msg'=>$msg
+                    ]
+                );
+            }
+            if($publishing->block == 1 ){
+                $msg = $request['lang'] == 'ar' ? ' لقد تم حظر هذا المنشور .' : 'this post block.';
+                return response()->json(
+                    [
+                        'status' => false,
+                        'data' => ['posted-trip'=>['id'=>null]],
+                        'msg'=>$msg
+                    ]
+                );
+            }
             return response()->json(
                 [
                     'status' => true,
-                    'data' => ['publishing'=> $this->responsePublishing($publishing, $request['user_id'])],
+                    'data' => ['posted-trip'=> $this->responsePublishing($publishing, $request['user_id'])],
                     'msg'=>""
                 ]
             );
@@ -949,16 +985,22 @@ class TripController extends Controller
         ]);
         if ($validator->passes()) {
             $publishing                = Publishing::where('id',$request['publishing_id'])
-                ->where('publisher_id', $request['user_id'])
-                ->orWhere('sharer_id',$request['user_id'])->first();
+                    ->where(function ($query) use($request){
+                        $query->where('publisher_id', $request['user_id'])
+                          ->orWhere('sharer_id',$request['user_id']);
+                    })
+//                ->where('publisher_id', $request['user_id'])
+//                ->orWhere('sharer_id',$request['user_id'])->first();
+                    ->first();
             if($publishing){
                 $publishing->privacy   =  $request->privacy;
-                $publishing->update();
+                $publishing->save();
+//                dd($request['publishing_id'],$publishing->toArray());
                 $msg = $request['lang'] == 'ar' ? ' تم تعديل.' : ' sucessfull update.';
                 return response()->json(
                     [
                         'status' => true,
-                        'data' => "",
+                        'data' => ['trip'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -967,7 +1009,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => "",
+                        'data' => ['trip'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -1016,7 +1058,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => true,
-                        'data'   => [ "comment" => $this->responseComment($comment) ],
+                        'data'   => [ "comment" => $this->responseComment($comment, $request['user_id']) ],
                         'msg'    =>$msg
                     ]
                 );
@@ -1056,7 +1098,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => true,
-                        'data'   => "",
+                        'data'   => ['trip'=>['id'=>null]],
                         'msg'    =>$msg
                     ]
                 );
@@ -1065,7 +1107,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => "",
+                        'data' => ['trip'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -1094,7 +1136,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => true,
-                        'data'   =>[ "comment" => $this->responseComment($comment) ],
+                        'data'   =>[ "comment" => $this->responseComment($comment, $request['user_id']) ],
                         'msg'    =>""
                     ]
                 );
@@ -1103,7 +1145,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => "",
+                        'data' => ['comment'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -1131,10 +1173,11 @@ class TripController extends Controller
             $comment                = Comment::find($request['comment_id']);
             if( $comment->user_id == $request['user_id'] ){
                 $comment->body    = $request['body'];
+                $comment->save();
                 return response()->json(
                     [
                         'status' => true,
-                        'data'   => [ "comment" => $this->responseComment($comment) ],
+                        'data'   => [ "comment" => $this->responseComment($comment ,$request['user_id']) ],
                         'msg'    =>""
                     ]
                 );
@@ -1143,7 +1186,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => "",
+                        'data' => ['comment',['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -1171,9 +1214,10 @@ class TripController extends Controller
 
             // check privacy
             if($publishing->privacy != "private"){
-                $data  = $publishing->comments->map(function ($comment){
-                    return $this->responseComment($comment);
+                $data  = $publishing->comments()->latest()->get()->map(function ($comment) use($request){
+                    return $this->responseComment($comment, $request['user_id']);
                 }) ;
+
                 return response()->json(
                     [
                         'status' => true,
@@ -1186,7 +1230,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => "",
+                        'data' => ['comments'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -1247,7 +1291,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => true,
-                        'data'   => "",
+                        'data'   => ['trip'=>['id'=>null]],
                         'msg'    =>$msg
                     ]
                 );
@@ -1256,7 +1300,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => "",
+                        'data' => ['trip'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -1299,7 +1343,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => "",
+                        'data' => ['likes'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -1344,7 +1388,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => "",
+                        'data' => ['shares'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -1368,8 +1412,19 @@ class TripController extends Controller
         ]);
 
         if ($validator->passes()) {
-            $publishing                = Publishing::find($request['publishing_id']);
-            if($publishing->privacy != "private"){
+           $publishing                = Publishing::find($request['publishing_id']);
+//            if($request['user_id'] != $request['publishing_id'])
+//            {
+//                $msg = $request['lang'] == 'ar' ? ' لايمكن اضافة منشورك الى المفضله .' : 'you can add his post to your favourti .';
+//                return response()->json(
+//                    [
+//                        'status' => false,
+//                        'data' => ['favourite'=>['id'=>null]],
+//                        'msg'=>$msg
+//                    ]
+//                );
+//            }
+            if($publishing->privacy != "private" ){
                 $fav     = Favourit::where('publishing_id', $request['publishing_id'])
                     ->where('user_id', $request['user_id'])->first();
                 if($fav) {
@@ -1396,7 +1451,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => true,
-                        'data'   => "",
+                        'data'   => ['favourite'=>['id'=>null]],
                         'msg'    =>$msg
                     ]
                 );
@@ -1405,7 +1460,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => "",
+                        'data' => ['favourite'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -1423,37 +1478,26 @@ class TripController extends Controller
     // get favourits
     public function getFavs(Request $request){
         $validator=Validator::make($request->all(),[
-            'publishing_id'  => 'required|exists:publishings,id',
             'user_id'        => 'required|exists:publishers,id',
         ]);
 
         if ($validator->passes()) {
-            $publishing                = Publishing::find($request['publishing_id']);
+            $publisher                = Publisher::find($request['user_id']);
 
-            // check privacy
-            if($publishing->privacy != "private"){
-                $data  = $publishing->favourits->map(function ($fav){
-                    $res['id']           = $fav['id'];
-                    $res['publishing']   = $this->responsePublishing($fav->publishing);
-                    return $res;
-                }) ;
-                return response()->json(
-                    [
-                        'status' => true,
-                        'data'   =>['favourits'=> $data],
-                        'msg'    =>""
-                    ]
-                );
-            }else{
-                $msg = $request['lang'] == 'ar' ? ' ليس لديك صلاحيه للتعليق .' : ' privacy not allow you to comment.';
-                return response()->json(
-                    [
-                        'status' => false,
-                        'data' => "",
-                        'msg'=>$msg
-                    ]
-                );
-            }
+            $favourits                = $publisher->favourits()->latest()->paginate(10);
+            $meta                     =  getBasicInfoPagantion($favourits);
+            $data  =  getCollectionPagantion($favourits)->map(function ($fav)use($request){
+                return $this->responsePublishing($fav->publishing, $request['user_id']);
+            }) ;
+            $res['posted-trips'] = $data;
+            $res['meta']        = $meta;
+            return response()->json(
+                [
+                    'status' => true,
+                    'data'   =>['posts'=> $res],
+                    'msg'    =>""
+                ]
+            );
 
 
         }else{
@@ -1471,32 +1515,34 @@ class TripController extends Controller
         $validator=Validator::make($request->all(),[
             'trip_id'        => 'required|exists:trips,id',
             'user_id'        => 'required|exists:publishers,id',
-            'status'         =>  'required|in:1,2,3',
+            'status'         =>  'required|in:0,1,2',
         ]);
         if ($validator->passes()) {
             $publishing                = Publishing::publishTrip($request['trip_id'])
                                         ->where('publisher_id',$request['user_id'])->first();
             if($publishing){
-                if($publishing->status == 1)
+                if($publishing->status == 0)
                 {
-                    $publishing->status = 2;
+                    $publishing->status = 1;
                     $publishing->update();
-                    $msg = $request['lang'] == 'ar' ? ' تم النشر.' : ' sucessfull delete.';
+                    $msg = $request['lang'] == 'ar' ? ' تم النشر.' : ' successfull publish.';
                     return response()->json(
                         [
                             'status' => true,
-                            'data' => ['publishing'=>""],
+                            'data' => ['trip'=>['id'=>null]],
                             'msg'=>$msg
                         ]
                     );
                 }
                 else
                 {
-                    $msg = $request['lang'] == 'ar' ? '  لايمكن  نشر هذه الرحله.' : ' can\'t publish this الرحله.';
+                    $publishing->status = $request['status'];
+                    $publishing->update();
+                    $msg = $request['lang'] == 'ar' ? ' تم تغير حالة المنشور.' : ' change the status of the trip.';
                     return response()->json(
                         [
                             'status' => true,
-                            'data' => ['publishing'=>""],
+                            'data' => ['trip'=>['id'=>null]],
                             'msg'=>$msg
                         ]
                     );
@@ -1507,7 +1553,7 @@ class TripController extends Controller
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => "",
+                        'data' => ['trip'=>['id'=>null]],
                         'msg'=>$msg
                     ]
                 );
@@ -1538,23 +1584,36 @@ class TripController extends Controller
         if ($validator->passes()) {
             $blocks       = Block::buldBlockId($request['user_id']);
             $blockingMe   = Block::buldBlockerId($request['user_id']);
+
             $allBlocks    = array_merge($blocks, $blockingMe);
+//            dd($allBlocks);
+            $publsihng2    = Publishing::where('privacy', 'public')
+                            ->where('block', 0)
+                            ->where('status',1)
+                            ->whereNotNull('sharer_id')
+                            ->whereNotIn('publisher_id', $allBlocks )
+                            ->whereNotIn('sharer_id', $allBlocks );
+
             $publsihng    = Publishing::where('privacy', 'public')
                                 ->where('block', 0)
+                                ->where('status',1)
+                                ->whereNull('sharer_id')
                                 ->whereNotIn('publisher_id', $allBlocks )
-                                ->WhereNotIn('sharer_id', $allBlocks)
+                                ->union($publsihng2)
                                 ->latest()
                                 ->simplePaginate(10);
+
             $meta       = getBasicInfoPagantion($publsihng);
-            $data       = getCollectionPagantion($publsihng)->map(function ($publishing) use($request){
-                return $this->responsePublishing($publishing, $request['user_id']);
+
+            $data       = getCollectionPagantion($publsihng)->map(function ($publish) use($request){
+                return $this->responsePublishing($publish, $request['user_id']);
             });
-            $res['pulishings'] = $data;
+            $res['posted-trips'] = $data;
             $res['meta']        = $meta;
             return response()->json(
                 [
                     'status' => true,
-                    'data'   =>['publishings'=> $res],
+                    'data'   =>['posts'=> $res],
                     'msg'    =>"",
 //                    'meta'   => $meta
                 ]
@@ -1579,15 +1638,19 @@ class TripController extends Controller
         ]);
 
         if ($validator->passes()) {
-            $blocks       = Block::buldBlockId($request['user_id']);
-            $blockingMe   = Block::buldBlockerId($request['user_id']);
-            $followers    = Follower::buldFollowerId($request['user_id']);
-            $allBlocks    = array_merge($blocks, $blockingMe);
-            $publsihng    = Publishing::where('privacy', 'flowers')
+            $followers    = Follower::buldFolloweId($request['user_id']);
+
+            $publsihng2   = Publishing::whereIn('privacy', ['flowers','public'])
                             ->where('block', 0)
+                            ->where('status',1)
+                            ->whereNotNull('sharer_id')
+                            ->whereIn('sharer_id', $followers);
+            $publsihng    = Publishing::whereIn('privacy', ['flowers','public'])
+                            ->where('status',1)
+                            ->where('block', 0)
+                            ->whereNull('sharer_id')
                             ->whereIn('publisher_id', $followers)
-                            ->whereNotIn('publisher_id', $allBlocks )
-                            ->WhereNotIn('sharer_id', $allBlocks)
+                            ->union($publsihng2)
                             ->latest()
                             ->simplePaginate(10);
             $meta       = getBasicInfoPagantion($publsihng);
@@ -1597,9 +1660,9 @@ class TripController extends Controller
             return response()->json(
                 [
                     'status' => true,
-                    'data'   =>['publishings'=> $data],
+                    'data'   =>['posts'=> ['posted-trips'=>$data,'meta'=>$meta]],
                     'msg'    =>"",
-                    'meta'   => $meta
+//                    'meta'   => $meta
                 ]
             );
 
@@ -1625,36 +1688,43 @@ class TripController extends Controller
             $followers    = Follower::buldFollowerId($request['publisher_id']);
             if($request['publisher_id'] == $request['user_id']){
                 $publsihng    = Publishing::whereIn('privacy', ['public','private','flowers'] )
+                    ->where('block', 0)
+                    ->where('status',1)
                     ->where('publisher_id', $request['publisher_id'] )
-                    ->Where('sharer_id', $request['publisher_id'])
+                    ->orWhere('sharer_id', $request['publisher_id'])
                     ->latest()
                     ->simplePaginate(10);
             } else if(in_array($request['user_id'], $followers))
             {
 
                 $publsihng    = Publishing::whereIn('privacy', ['public','flowers'] )
+                    ->where('block', 0)
+                    ->where('status',1)
                     ->where('publisher_id', $request['publisher_id'] )
-                    ->Where('sharer_id', $request['publisher_id'])
+                    ->orWhere('sharer_id', $request['publisher_id'])
+                    ->latest()
                     ->simplePaginate(10);
             } else{
                 $publsihng    = Publishing::where('privacy', 'public' )
                     ->where('publisher_id', $request['publisher_id'] )
-                    ->Where('sharer_id', $request['publisher_id'])
+                    ->orWhere('sharer_id', $request['publisher_id'])
+                    ->latest()
                     ->simplePaginate(10);
             }
             $meta       = getBasicInfoPagantion($publsihng);
             $publisher  = Publisher::find($request['publisher_id']);
             $arr['publisher']=$this->responseUserProfile($publisher, $request['user_id']);
-            $data       = getCollectionPagantion($publsihng)->map(function ($publishing) use($request){
+            $data= getCollectionPagantion($publsihng)->map(function ($publishing) use($request){
                 return $this->responsePublishing($publishing, $request['user_id']);
             });
-//            $arr['publishings'] = $data;
+            $arr['posted-trips'] = $data;
+            $arr['meta'] = $meta;
             return response()->json(
                 [
                     'status' => true,
-                    'data'   =>['profile'=> $data],
+                    'data'   =>['profile'=>$arr],
                     'msg'    =>"",
-                    'meta'   => $meta
+//                    'meta'   => $meta
                 ]
             );
 
@@ -1676,7 +1746,7 @@ class TripController extends Controller
         ]);
         if ($validator->passes()) {
             $publishing                = Publishing::whereNull("sharer_id")
-                ->where('publisher_id', $request['user_id'])->simplePaginate(10);
+                ->where('publisher_id', $request['user_id'])->latest()->simplePaginate(10);
 
             $meta       = getBasicInfoPagantion($publishing);
 
@@ -1686,9 +1756,9 @@ class TripController extends Controller
             return response()->json(
                 [
                     'status' => true,
-                    'data'   =>['publishings'=> $data],
+                    'data'   =>['posts'=> ['posted-trips'=>$data,'meta'=>$meta]],
                     'msg'    =>"",
-                    'meta'   => $meta
+//                    'meta'   => $meta
                 ]
             );
 

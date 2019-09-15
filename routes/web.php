@@ -67,9 +67,15 @@ Route::group( [
 
     Route::get('address-store/{id}','StoreController@storeAddress')->name('store.address');
 
+    Route::get('store-type','StoreController@storeType')->name('store.addStoreType');
+
+    Route::post('add-type','StoreController@addType')->name('store.store.type');
+
     Route::post('save-store-address/{id}','StoreController@saveAddress')->name('store.save');
 
     Route::get('changeStatus', 'StoreController@changeStatus');
+
+    Route::get('address-change', 'StoreController@changeStatusAddress');
 
     Route::get('changeVerified', 'StoreController@changeVerified');
 
@@ -118,6 +124,16 @@ Route::group( [
 {
     Route::get('index','SuggestedPlacesController@index')->name('place.index');
 
+    Route::get('add','SuggestedPlacesController@add')->name('place.add');
+
+    Route::post('store','SuggestedPlacesController@store')->name('place.store');
+
+    Route::get('edit/{id}','SuggestedPlacesController@edit')->name('place.edit');
+
+    Route::post('update/{id}','SuggestedPlacesController@update')->name('place.update');
+
+    Route::get('delete/{id}','SuggestedPlacesController@delete')->name('place.delete');
+
 
 
 });
@@ -141,6 +157,7 @@ Route::group( [
 
     Route::get('terms-edit/{id}','ManageController@editTerms')->name('manage.terms.edit');
 
+
     Route::post('terms-update/{id}','ManageController@updateTerms')->name('manage.terms.update');
 
     Route::get('contact-edit/{id}','ManageController@editContacts')->name('manage.contacts.edit');
@@ -150,6 +167,11 @@ Route::group( [
     Route::get('about-edit/{id}','ManageController@editAbout')->name('manage.about.edit');
 
     Route::post('about-update/{id}','ManageController@updateAbout')->name('manage.about.update');
+
+    Route::get('list-message','ManageController@allMessages')->name('manage.messages');
+
+    Route::get('single-message/{id}','ManageController@singleMessage')->name('manage.single');
+
 
 
 
@@ -171,6 +193,16 @@ Route::group( [
 ], function()
 {
     Route::get('index','NotificationsController@index')->name('notification.index');
+
+    Route::get('send-notification/{id}','NotificationsController@sendNotification')->name('notification.send');
+
+    Route::get('edit-notification/{id}','NotificationsController@editNotification')->name('notification.edit');
+
+    Route::post('update-notification/{id}','NotificationsController@updateNotification')->name('notification.update');
+
+    Route::get('add-notification','NotificationsController@addNotification')->name('notification.add');
+
+    Route::post('store-notification','NotificationsController@storeNotification')->name('notification.store');
 
 
 
@@ -258,6 +290,19 @@ Route::group( [
     Route::get('index','RoadRisksController@index')->name('road.index');
 
     Route::get('changeStatus','RoadRisksController@changeStatus')->name('road.status');
+
+    Route::get('risk-list','RoadRisksController@listRisks')->name('road.risks');
+
+    Route::get('add-risk','RoadRisksController@addRisk')->name('road.risks.add');
+
+    Route::post('store-risk','RoadRisksController@storeRisk')->name('road.risks.store');
+
+    Route::get('edit-risk/{id}','RoadRisksController@editRisk')->name('risk.edit');
+
+    Route::post('update-risk/{id}','RoadRisksController@updateRisk')->name('risk.update');
+
+    Route::get('delete-risk/{id}','RoadRisksController@deleteRisk')->name('risk.delete');
+
 
 
 

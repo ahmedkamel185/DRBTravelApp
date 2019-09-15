@@ -23,7 +23,8 @@ class CreateRisksTable extends Migration
             $table->boolean('status')->default(true);
             $table->bigInteger('publisher_id')->unsigned();
             $table->foreign('publisher_id')->references('id')->on('publishers')->onDelete('cascade');
-            $table->string('type')->default('general');
+            $table->bigInteger('risk_type_id')->unsigned();
+            $table->foreign('risk_type_id')->references('id')->on('risk_types')->onDelete('cascade');
             $table->timestamps();
         });
     }

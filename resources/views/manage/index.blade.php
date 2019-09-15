@@ -2,16 +2,11 @@
 @section('cs')
 
 @endsection
+@section('bread')
+    <li class="active" style="color: white;font-size: larger">Manage App Setting</li>
+@endsection
 @section('content')
 
-    @if(session()->has('success'))
-        <h2 class="page-header">Manage In-App Content</h2>
-        <div class="alert alert-success alert-dismissible">
-            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-            <h4><i class="icon fa fa-check"></i></h4>
-            {{session()->get('success')}}
-        </div>
-    @endif
 
     <div class="row">
         <div class="col-md-12">
@@ -23,41 +18,44 @@
                     <li><a href="#tab_3" data-toggle="tab"><h4>About Us</h4></a></li>
                 </ul>
                 <div class="tab-content">
-                    <div class="tab-pane active" id="tab_1">
+                    @if(App\Models\Setting::first())
+
+                        <div class="tab-pane active" id="tab_1">
                             <h2 style="display: inline !important"> Terms and Conditions </h2>
+
                             <p class="display-block-xs" style="float: right"><a
-                                        href="{{route('manage.terms.edit',['id'=>$manages->id])}}"
-                                        class="fa fa-edit "></a>
+                                    href="{{route('manage.terms.edit',['id'=>$manages->id])}}"
+                                    class="fa fa-edit "></a>
                             </p>
-                        <p>
-                            {{$manages->terms_ar}}
-                        </p>
-                        <p>
-                            {{$manages->terms_en}}
-                        </p>
-                    </div>
-                    <!-- /.tab-pane -->
-                    <div class="tab-pane" id="tab_2">
-                        <h2>Contact Us</h2>
-                        <p class="display-block-xs" style="float: right"><a
+                            <p>
+                                {{$manages->terms_ar}}
+                            </p>
+                            <p>
+                                {{$manages->terms_en}}
+                            </p>
+                        </div>
+                        <!-- /.tab-pane -->
+                        <div class="tab-pane" id="tab_2">
+                            <h2>Contact Us</h2>
+                            <p class="display-block-xs" style="float: right"><a
                                     href="{{route('manage.contacts.edit',['id'=>$manages->id])}}"
                                     class="fa fa-edit "></a>
-                        </p>
+                            </p>
 
-                        <p>{{$manages->contact_us_ar}}</p>
-                        <p>{{$manages->contact_us_en}}</p>
-                    </div>
-                    <!-- /.tab-pane -->
-                    <div class="tab-pane" id="tab_3">
-                        <h2>About Us</h2>
-                        <p class="display-block-xs" style="float: right"><a
+                            <p>{{$manages->mobile}}</p>
+                        </div>
+                        <!-- /.tab-pane -->
+                        <div class="tab-pane" id="tab_3">
+                            <h2>About Us</h2>
+                            <p class="display-block-xs" style="float: right"><a
                                     href="{{route('manage.about.edit',['id'=>$manages->id])}}"
                                     class="fa fa-edit "></a>
-                        </p>
-                        <p>{{$manages->about_ar}}</p>
-                        <p>{{$manages->about_en}}</p>
-                    </div>
-                    <!-- /.tab-pane -->
+                            </p>
+                            <p>{{$manages->about_ar}}</p>
+                            <p>{{$manages->about_en}}</p>
+                        </div>
+                @endif
+                <!-- /.tab-pane -->
                 </div>
                 <!-- /.tab-content -->
             </div>

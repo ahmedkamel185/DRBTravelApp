@@ -4,11 +4,14 @@ namespace App\Http\Controllers\WEB;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\Contact;
 
 class FeedbackController extends Controller
 {
     public function index()
     {
-        return view('feedback.index');
+        $feedbacks = Contact::paginate(3);
+
+        return view('feedback.index')->with('feedbacks', $feedbacks);
     }
 }

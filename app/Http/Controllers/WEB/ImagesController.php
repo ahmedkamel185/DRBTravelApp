@@ -11,7 +11,9 @@ class ImagesController extends Controller
     //
     public function index()
     {
-       $image =  TripResource::where('type','image')->paginate(3);
-        return view('images.index')->with('images',$image);
+       $image =  TripResource::where('type','image')->paginate(6);
+        return view('images.index')
+            ->with('images',$image)
+            ;
     }
 }

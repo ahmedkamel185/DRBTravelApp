@@ -4,9 +4,11 @@
 
 
 @endsection
+@section('bread')
+    <li><a href="{{route('user.index')}}" style="color: white">Manage User</a></li>
+    <li class="active" style="color: white;font-size: larger">User Details</li>
+@endsection
 @section('content')
-
-
 
     <div class="panel panel-primary">
         <div class="panel-heading">User Details</div>
@@ -37,15 +39,15 @@
                     <div style="float: right">
                         <li>
                             <p><strong><i class="fa fa-road"></i> Trips Completed</strong>
-                                <br> 0</p>
+                                <br> {{$trip_completed}}</p>
                         </li>
                         <li>
                             <p><strong><i class="fa fa-exclamation-triangle"></i> Risk Reported</strong>
-                                <br> 0</p>
+                                <br> {{$risk_reported}}</p>
                         </li>
                         <li>
                             <p><strong><i class="fa fa-map-marker" aria-hidden="true"></i> Suggested Places</strong>
-                                <br> 0</p>
+                                <br> {{$suggest_places}}</p>
                         </li>
                     </div>
                 </ul>
@@ -67,56 +69,111 @@
                 </ul>
                 <div class="tab-content">
                     <div class="tab-pane active" id="tab_1">
-                        <h2 style="display: inline !important"> Trips </h2>
                         @foreach($trips as $trip)
-                            <div>
-                                <div>
-                                    <h4>Started Location : {{$trip->start_address}} </h4>
-                                    <h4>Ended Location : {{$trip->end_address}} </h4>
-                                    <h4>Distance : {{$trip->distance}} </h4>
+
+
+                            <div class="panel panel-primary">
+                                <div class="panel-heading"></div>
+                                <div class="panel-body">
+
+
+                                    <div class="col-md-12">
+                                        <ul class="admin_info_new">
+                                            <div style="float: left">
+                                                <li class="fa fa-map-marker green" style="color: green"></li>&nbsp;
+                                                <span
+                                                    style="font-size: large">{{$trip->start_address}}</span><br>
+                                                <li class="fa fa-map-marker red" style="color: red"></li>&nbsp; <span
+                                                    style="font-size: large">{{$trip->end_address}}</span>
+                                                <li>
+                                                    <p><strong><i class="fa fa-time" aria-hidden="true"></i> Started At</strong>
+                                                        <br>{{$trip->created_at->format('Y-m-d')}} </p>
+                                                </li>
+                                                <li>
+                                                    <p><strong><i class="fa fa-time" aria-hidden="true"></i> Ended
+                                                            At</strong>
+                                                        <br>{{$trip->ended_at}} </p>
+                                                </li>
+                                            </div>
+
+                                        </ul>
+
+
+                                    </div>
+                                    <div class="col-md-12" style="padding: 2px">
+                                        @foreach($trip->resources as $resource)
+                                            @if($resource->type == 'image')
+                                                <img src="{{asset('/uploads/tripResources/'.$resource->resource)}}"
+                                                     width="320"
+                                                     height="240">
+                                            @endif
+                                        @endforeach
+
+                                    </div>
+                                    <div class="col-md-12">
+                                        @foreach($trip->resources as $resource)
+                                            @if($resource->type == 'vedio')
+                                                <video width="320" height="240" controls>
+                                                    <source
+                                                        src="{{asset('/uploads/tripResources/'.$resource->resource)}}">
+                                                </video>
+                                            @endif
+                                        @endforeach
+
+                                    </div>
+
 
                                 </div>
-
-
                             </div>
-                            <br>
-                            <div>
-                                @foreach($trip->resources as $resource)
-                                    @if($resource->type ==='image')
-                                        <img src="{{asset('/uploads/tripResources/'.$resource->resource)}}"
-                                             width="320"
-                                             height="240">
-                                    @else
 
-                                        <video width="320" height="240" controls>
-                                            <source src="{{asset('/uploads/tripResources/'.$resource->resource)}}">
-                                        </video>
-
-                                    @endif
-
-                                @endforeach
-                            </div>
-                            <hr>
-                            <hr>
-                            <hr>
 
 
                         @endforeach
-
                     </div>
+                    <div class="tab-pane" id="tab_2">
+                        <div class="tab-content">
+                            @foreach($suggest as $sug)
+                                <div class="panel panel-primary">
+                                    <div class="panel-heading"></div>
+                                    <div class="panel-body">
+
+                                        <div class="col-md-3">
+                                            <img src="{{asset('/uploads/suggests/'.$sug->image)}}"
+                                                 width="100px"
+                                                 height="100px"
+                                                 class="img-circle d-inline" alt="">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <ul class="admin_info_new">
+                                                <div style="float: left">
+                                                    <li>
+                                                        <p><strong><i class="fa fa-user"></i> Address</strong>
+                                                            <br>{{$sug->address}}</p>
+                                                    </li>
+                                                    <li>
+                                                        <p><strong><i class="fa fa-"></i>Description</strong>
+                                                            <br>{{$sug->desc}}</p>
+                                                    </li>
+
+                                                </div>
+
+                                            </ul>
+
+
+                                        </div>
+
+
+                                    </div>
+                                </div>
+
+                            @endforeach
+
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
-    </div>
-    </div>
-    </div>
-    </div>
-    <!-- /.tab-content -->
-    <!-- nav-tabs-custom -->
-    </div>
-    <!-- /.col -->
-
-    <!-- /.col -->
     </div>
 
 

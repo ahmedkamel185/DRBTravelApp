@@ -18,7 +18,7 @@ class CreateSuggestsTable extends Migration
             $table->string('lat');
             $table->string('lng');
             $table->string('address');
-            $table->string('image');
+            $table->string('image')->default('default_image.png');
             $table->text('desc');
             $table->bigInteger('user_id')->unsigned();
 

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\WEB;
 
+use App\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Publisher;
+use App\Models\Risk;
 use App\Models\Trip;
 use App\Notifications\Admin as AdminNotify;
 
@@ -15,7 +17,8 @@ class UsersController extends Controller
     {
 
         return view('users.index')
-            ->with('users', Publisher::all());
+            ->with('users', Publisher::all())
+            ->with('user_count',Publisher::all()->count());
     }
 
     public function changeStatus(Request $request)
@@ -25,7 +28,7 @@ class UsersController extends Controller
         $user = Publisher::find($request->user_id);
 
         $user->status = $request->status;
-        if($user->status = 0){
+        if($user->status === 0){
             send_FCM(
                 $user,
                 [
@@ -68,16 +71,19 @@ class UsersController extends Controller
         return response()->json(['success'=>'Status change verified.']);
 
     }
-    
+
     public function show($id)
     {
 
         $publisher =  Publisher::find($id);
         $trips = $publisher->trips->all();
-
            return view('users.show')
                ->with('user',$publisher)
                ->with('trips',$trips)
+               ->with('trip_completed',$publisher->trips()->where('status','1')->count() )
+               ->with('risk_reported',$publisher->risks()->where('status','1')->count())
+               ->with('suggest_places',$publisher->suggest->count())
+               ->with('suggest',$publisher->suggest)
                ;
 
 

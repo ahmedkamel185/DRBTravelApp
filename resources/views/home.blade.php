@@ -10,7 +10,7 @@
                     <p>Number Trips</p>
                 </div>
                 <div class="icon">
-                    <i class="ion ion-bag"></i>
+                    <i class="fa fa-bus"></i>
                 </div>
                 <a href="{{route('trip.index')}}" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
             </div>
@@ -25,7 +25,7 @@
                     <p>Roads Risks</p>
                 </div>
                 <div class="icon">
-                    <i class="ion ion-stats-bars"></i>
+                    <i class="fa fa-exclamation-triangle"></i>
                 </div>
                 <a href="{{route('road.index')}}" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
             </div>
@@ -55,7 +55,7 @@
                     <p>Service Providers</p>
                 </div>
                 <div class="icon">
-                    <i class="ion ion-pie-graph"></i>
+                    <i class="fa fa-home"></i>
                 </div>
                 <a href="{{route('store.index')}}" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
             </div>

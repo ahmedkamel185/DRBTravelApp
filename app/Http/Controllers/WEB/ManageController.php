@@ -5,6 +5,7 @@ namespace App\Http\Controllers\WEB;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Models\Contact;
 class ManageController extends Controller
 {
     public function index()
@@ -49,12 +50,12 @@ class ManageController extends Controller
     public function updateContacts(Request $request)
     {
         $validator = $this->validate($request,[
-            'contact_us_ar'   => 'required',
-            'contact_us_en'   => 'required'
+            'mobile'   => 'required',
+//            'contact_us_en'   => 'required'
         ]);
         $contact = Setting::find($request->id);
-        $contact->contact_us_ar = $request['contact_us_ar'];
-        $contact->contact_us_en = $request['contact_us_en'];
+        $contact->mobile = $request['mobile'];
+//        $contact->contact_us_en = $request['contact_us_en'];
         $contact->save();
         session()->flash('success','You have successfully edited the content. ');
         return redirect()->route('manage.index');
@@ -84,6 +85,19 @@ class ManageController extends Controller
         return redirect()->route('manage.index');
 
 
+    }
+
+    public function allMessages()
+    {
+        return view('manage.contacts')->with('messages',Contact::all());
+    }
+    public function singleMessage($id)
+    {
+        $message = Contact::find($id);
+        $message->seen = 1;
+        $message->save();
+        session()->flash('success','message read');
+        return redirect()->back();
     }
 
 

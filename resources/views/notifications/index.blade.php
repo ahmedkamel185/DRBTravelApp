@@ -15,11 +15,14 @@
          folder instead of downloading all of them to reduce the load. -->
     <link rel="stylesheet" href="{{'/design/adminlte'}}/dist/css/skins/_all-skins.min.css">
 @endsection
+@section('bread')
+    <li class="active" style="color: white;font-size: larger">Manage Notifications</li>
+@endsection
 @section('content')
 
-    <div class="box">
         <div class="box-header">
             <h3 class="box-title">Manage Notifications</h3>
+            <span style="float: right" class="fa fa-add"><a href="{{route('notification.add')}}">Add Notification</a></span>
         </div>
         <!-- /.box-header -->
         <div class="box-body">
@@ -29,33 +32,27 @@
                     <th>S.NO.</th>
                     <th>Title</th>
                     <th>Notification Description</th>
-                    <th>Action</th>
+                    <th>Edit</th>
+                    <th>Send</th>
                 </tr>
                 </thead>
                 <tbody>
+                @foreach($notifications as $notification)
                     <tr>
-                        <td> </td>
-                        <td> </td>
-                        <td> </td>
-                        <td> </td>
+                        <td>{{$notification->id}}</td>
+                        <td>{{$notification->title}}</td>
+                        <td>{{$notification->desc}}</td>
+                        <td><a  class="fa fa-edit" href="{{route('notification.edit',['id'=>$notification->id])}}"></a></td>
+                        <td><a  class="fa fa-paper-plane" href="{{route('notification.send',['id'=>$notification->id])}}"></a></td>
 
                     </tr>
-
+                @endforeach
 
                 </tbody>
-                <tfoot>
-                <tr>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                </tr>
-                </tfoot>
             </table>
         </div>
         <!-- /.box-body -->
-    </div>
+
 
 
 

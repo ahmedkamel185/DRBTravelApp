@@ -16,4 +16,11 @@ class Risk extends Model
     {
         return $this->hasMany('App\Models\RiskComment','risk_id','id');
     }
+
+    public function riskType()
+    {
+        return $this->belongsTo('App\Models\RiskType','risk_type_id','id');
+    }
+
+
 }

@@ -33,11 +33,11 @@ function upload_img($base64_img ,$path) {
 // save the event
 function publisher_log($publisher_id, $event_ar , $event_en)
 {
-        $event               = new \App\Models\LogActivity;
-        $event->publisher_id = $publisher_id;
-        $event->event_ar     = $event_ar;
-        $event->event_en     = $event_en;
-        $event->save();
+//        $event               = new \App\Models\LogActivity;
+//        $event->publisher_id = $publisher_id;
+//        $event->event_ar     = $event_ar;
+//        $event->event_en     = $event_en;
+//        $event->save();
 }
 
 // get basic information from pagnation
@@ -138,4 +138,18 @@ function send_FCM ($user, $data)
      $ids          =  collect(\DB::select($query))->pluck('id')->toArray();
      return $ids;
  }
+
+ // get near
+function get_near($lat , $lng, $disance=5, $unit='k', $table="store_places", $addation=""){
+
+    $type        = 6371;
+
+    if($unit=='m')
+        $type  = 3959;
+    $query = "SELECT id 
+                    , ( $type * acos ( cos ( radians(". $lat .") ) * cos( radians( lat ) ) * cos( radians( lng ) - radians(".  $lng .") ) + sin ( radians(". $lat .") ) * sin( radians( lat ) ) ) )
+                     AS `distance` FROM `{$table}` {$addation} HAVING distance <= $disance  ";
+    $ids          =  collect(\DB::select($query))->pluck('id')->toArray();
+    return $ids;
+}
 ?>

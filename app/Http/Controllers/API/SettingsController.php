@@ -19,10 +19,11 @@ class SettingsController extends Controller
     public function contact(Request $request)
     {
         $validator = Validator::make($request->all(),[
-            'contact_number'   => 'required|min:2|max:190|exists:publishers,mobile',
-            'email'            => 'required|email|min:2|max:190|exists:publishers,email',
+            'contact_number'   => 'required|min:2|max:190',
+            'email'            => 'required|email|min:2|max:190',
             'subject'          => 'required|min:2|max:190',
-            'desc'             => 'required'
+            'desc'             => 'required',
+            'publisher_id'     => 'required|exists:publishers,id'
         ]);
 
         if ($validator->passes())
@@ -32,12 +33,13 @@ class SettingsController extends Controller
           $contact->email            = $request['email'];
           $contact->subject          = $request['subject'];
           $contact->desc             = $request['desc'];
+          $contact->publisher_id     = $request['publisher_id'];
           $contact->save();
             $msg = $request['lang'] == 'ar' ? 'تم ارسال الرساله بنجاح.' : 'message sent success .';
             return response()->json(
                 [
                     'status' => true,
-                    'data'  => "",
+                    'data' => ['publisher' => ['id' => null]],
                     'msg'   => $msg
                 ]
             );

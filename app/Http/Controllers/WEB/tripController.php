@@ -12,7 +12,11 @@ class tripController extends Controller
     //
     public function index()
     {
-        return view('trip.index')->with('trips',Trip::paginate(3));
+        return view('trip.index')
+            ->with('trips',Trip::paginate(3))
+            ->with('trips_count',Trip::all()->count())
+
+            ;
     }
     public function destroy($id)
     {

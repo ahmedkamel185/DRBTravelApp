@@ -16,7 +16,28 @@ class StoreController extends Controller
     //index
     public function index()
     {
-        return view('store.index')->with('stores', Store::all());
+        return view('store.index')
+            ->with('stores', Store::all())
+            ->with('store_count',Store::all()->count())
+            ;
+    }
+    public function storeType()
+    {
+        return view('store.addType');
+    }
+    public function addType(Request $request)
+    {
+        $this->validate($request,[
+           'name_ar' =>'required|min:2|max:190',
+           'name_en' =>'required|min:2|max:190',
+        ]);
+        $type   = new StoreType;
+        $type->name_ar  = $request->name_ar;
+        $type->name_en  =$request->name_en;
+        $type->save();
+        session()->flash('success','Store Type Added Successfuly');
+        return redirect()->back();
+
     }
 
 
@@ -48,6 +69,22 @@ class StoreController extends Controller
 
 
         return response()->json(['success' => 'Status change verified.']);
+
+    }
+
+
+    public function changeStatusAddress(Request $request)
+
+    {
+
+        $user = StorePlace::find($request->user_id);
+
+        $user->status = $request->status;
+
+        $user->save();
+
+
+        return response()->json(['success' => 'Status change status.']);
 
     }
 
@@ -106,13 +143,13 @@ class StoreController extends Controller
         $this->validate($request, [
             "store_name" => 'required|min:2|max:190|unique:stores,store_name',
             'store_type' => 'required|exists:store_types,id',
-            'address' => 'required|min:2|max:190',
-            'mobile' => 'required|min:2|max:190|unique:stores,mobile',
-            'email' => 'required|email|min:2|max:190|unique:stores,email',
-            'password' => 'required|min:2|max:190',
-            'city' => 'required|min:2|max:190',
-            'lat' => 'required',
-            'lng' => 'required'
+            'mobile'     => 'required|min:2|max:190|unique:stores,mobile',
+            'email'      => 'required|email|min:2|max:190|unique:stores,email',
+            'password'   => 'required|min:2|max:190',
+            'city'       => 'required|min:2|max:190',
+            'image'      => 'nullable|mimes:jpeg,png,jpg|max:2048',
+            'lat'        => 'required',
+            'lng'        => 'required'
         ]);
         $store = new Store;
         $store->store_name = $request['store_name'];
@@ -121,7 +158,15 @@ class StoreController extends Controller
         $store->password = bcrypt($request['password']);
         $store->city = $request['city'];
         $store->store_type_id = $request['store_type'];
-        $store->address = $request['address'];
+
+        if ($request['image']) {
+            $photo = $request->image;
+            $name = date('d-m-y') . time() . rand() . '.' . $photo->getClientOriginalExtension();
+            $photo->move(public_path('uploads/stores'), $name);
+            $store->image = $name;
+        }
+
+
         $store->save();
         session()->flash('success', 'Provider added success');
 
@@ -142,7 +187,7 @@ class StoreController extends Controller
                 "lat" => 'required',
                 'lng' => 'required',
                 'address' => 'required|min:2|max:190',
-                'image' => 'nullable|image',
+                'image' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 'desc' => 'required',
             ]);
 
@@ -152,6 +197,14 @@ class StoreController extends Controller
         $storePlace->address = $request['address'];
         $storePlace->desc = $request['desc'];
         $storePlace->store_id = $store_id->id;
+
+
+        if ($request['image']) {
+            $photo = $request->image;
+            $name = date('d-m-y') . time() . rand() . '.' . $photo->getClientOriginalExtension();
+            $photo->move(public_path('uploads/storePlaces'), $name);
+            $storePlace->image = $name;
+        }
 
         $storePlace->save();
         return redirect()->route('store.show',['id' =>$store_id->id])->with('store',$store_id);

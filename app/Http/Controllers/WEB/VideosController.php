@@ -11,7 +11,7 @@ class VideosController extends Controller
     //
     public function index()
     {
-        $video =  TripResource::where('type','video')->paginate(3);
+        $video =  TripResource::where('type','vedio')->paginate(3);
         return view('videos.index')->with('videos',$video);
     }
 }

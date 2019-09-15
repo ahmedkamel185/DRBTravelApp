@@ -27,7 +27,6 @@ class RiskCommentController extends Controller
             'publisher_id'                 => 'required|exists:publishers,id',
             'risk_id'                      => 'required|exists:risks,id',
             'vote'                         => 'required|in:yes,no',
-            'risk_comment_id'              => 'required|exists:risk_comments,id',
 
         ]);
         if ($validator->passes()){
@@ -36,14 +35,14 @@ class RiskCommentController extends Controller
         $risk_id = !!RiskComment::where('risk_id', $request->risk_id)->first();
         if ($publisher_id && $risk_id)
         {
-                $riskComment                       = RiskComment::find($request->risk_comment_id);
+                $riskComment                       = RiskComment::where('publisher_id',$request->publisher_id)->where('risk_id',$request->risk_id)->first();
                 $riskComment->vote                 = $request['vote'];
                 $riskComment->risk_id              = $request['risk_id'];
                 $riskComment->publisher_id         = $request['publisher_id'];
 
                 $riskComment->save();
                 $msg = $request['lang'] == 'ar' ? 'تم تعديل تعليق علي الخطر ':" comment updated success";
-                return response()->json(['status'=>true,'data' => "", 'msg' => $msg]);
+                return response()->json(['status'=>true,'data' => ['trip'=>['id'=>null]], 'msg' => $msg]);
 
             }
 
@@ -57,7 +56,7 @@ class RiskCommentController extends Controller
 
 
             $msg = $request['lang'] == 'ar' ? 'تم اضافه تعليق علي الخطر ':" comment add success";
-            return response()->json(['status'=>true,'data' => "", 'msg' => $msg]);
+            return response()->json(['status'=>true,'data' => ['trip'=>['id'=>null]], 'msg' => $msg]);
 
         }else{
             foreach ((array)$validator->errors() as $key => $value){

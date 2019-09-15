@@ -20,10 +20,10 @@ class CreateStorePlacesTable extends Migration
             $table->string('address');
             $table->string('image')->default('default_image.png');
             $table->text('desc');
-            $table->boolean('status')->default(true);
+            $table->integer('status')->default(1);
             $table->bigInteger('store_id')->unsigned();
             $table->foreign('store_id')->references('id')->on('stores')->onDelete('cascade');
-            
+
             $table->timestamps();
         });
     }

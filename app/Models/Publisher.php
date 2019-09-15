@@ -22,7 +22,7 @@ class Publisher extends Authenticatable
 
     public function risks()
     {
-        return $this->hasMany('App\Models\Risk','risk_id','id');
+        return $this->hasMany('App\Models\Risk','publisher_id','id');
     }
 
     public function risksComment()
@@ -59,6 +59,11 @@ class Publisher extends Authenticatable
     {
         return $this->hasMany('App\Models\Comment','user_id','id');
     }
+ // suggest
+    public function suggest()
+    {
+        return $this->hasMany('App\Models\Suggest','user_id','id');
+    }
 
     /*======================*/
     //likes
@@ -78,7 +83,7 @@ class Publisher extends Authenticatable
 
     public function favourits()
     {
-        return $this->hasMany('App\Models\Favourit','publishing_id','id');
+        return $this->hasMany('App\Models\Favourit','user_id','id');
     }
 
     // follows
@@ -127,6 +132,11 @@ class Publisher extends Authenticatable
             'user_id',
             'publisher_id'
         )->withTimestamps();
+    }
+
+    public function contacts()
+    {
+        return $this->hasMany('App\Models\Contact','publisher_id','id');
     }
 
 }

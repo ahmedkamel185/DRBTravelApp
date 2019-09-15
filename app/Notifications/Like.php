@@ -50,7 +50,7 @@ class Like extends Notification
     {
         $user      = $this->like->user;
         $title_ar  = " قام  {$user->display_name} بالاعجاب  بمنشورك" ;
-        $title_en  = "{$this->user->display_name} do  like to post" ;
+        $title_en  = "{$user->display_name} do  like to post" ;
         $msg_ar    = "يمكن مشاهدة كل الاعجاب";
         $msg_en    = 'can see all likes';
         $image     = asset('uploads/publishers') . '/' . $user->image;
