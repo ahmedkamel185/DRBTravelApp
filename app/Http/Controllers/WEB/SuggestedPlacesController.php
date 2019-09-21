@@ -12,7 +12,7 @@ class SuggestedPlacesController extends Controller
     //
     public function index()
     {
-        return view('places.index')->with('places',Suggest::paginate(10));
+        return view('places.index')->with('places',Suggest::orderby('created_at','DESC')->paginate(10));
     }
     public function add(Request $request)
     {

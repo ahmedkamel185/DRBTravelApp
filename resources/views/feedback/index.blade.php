@@ -28,13 +28,18 @@
                                     <br>{{$feedback->email}}</p>
                             </li>
                             <li>
-                                <p><strong><i class="fa fa-envelope"></i> Email Address</strong>
+                                <p><strong><i class="fa fa-calendar"></i> Date</strong>
                                     <br>{{$feedback->created_at->diffForHumans()}}</p>
                             </li>
 
                             <li>
                                 <p><strong><i class="fa fa-text-width" aria-hidden="true"></i> Subject</strong>
                                     <br> {{$feedback->subject}}</p>
+                            </li>
+
+                            <li>
+                                <p><strong><i class="fa fa-text-width" aria-hidden="true"></i> Content</strong>
+                                    <br>{{$feedback->desc}}</p>
                             </li>
                         </div>
                     </ul>

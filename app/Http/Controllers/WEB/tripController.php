@@ -13,7 +13,7 @@ class tripController extends Controller
     public function index()
     {
         return view('trip.index')
-            ->with('trips',Trip::paginate(3))
+            ->with('trips',Trip::orderby('created_at','DESC')->paginate(3))
             ->with('trips_count',Trip::all()->count())
 
             ;

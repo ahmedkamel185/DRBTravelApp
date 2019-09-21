@@ -38,9 +38,25 @@ class storePlacesController extends Controller
         $res['lng']        =   $storePlace['lng'];
         $res['address']    =   $storePlace['address'];
         $res['desc']       =   $storePlace['desc'];
+        $res['created_at']       =   strtotime($storePlace->created_at) * 1000;
         $res['image']      =   asset('uploads/storePlace').'/'.$storePlace['image'];
         return $res;
 
+    }
+    protected function responseUserStore($user, $type=2)
+    {
+        $res["id"]              = $user->id;
+        $res["store_name"]      = $user->store_name;
+        $res["mobile"]          = $user->mobile;
+        $res["email"]           = $user->email;
+        $res["city"]            = $user->city;
+        $image                  = is_null($user['image'])? "default_image.png" : $user['image'];
+        $res['image']           = asset('uploads/publishers') . '/' . $image;
+        $res['status']          = is_null($user['status'])?1:$user['status'];
+        $res['verified']        = is_null($user['verified'])?1:$user['verified'];
+        $res['type']            = $type;
+        $res['storeType']       = $this->responseStoreType($user->StoreType);
+        return $res;
     }
     // reponse store
     protected function responseUser($user, $type=2)
@@ -59,10 +75,11 @@ class storePlacesController extends Controller
         return $res;
     }
     // repsonse near
-    protected function responsNear($place,$lat,$lng ,$unit){
+    protected function responsNear($place,$lat=null,$lng=null ,$unit=null){
         $res['places'] =  $this->responseStorePlace($place);
         $res['store']  =  $this->responseUser($place->store);
-        $res['disance']=  distance($lat , $lng ,$place,$unit);
+        if($lat)
+            $res['disance']=  distance($lat , $lng ,$place,$unit);
         return $res;
     }
     /*************************************
@@ -408,7 +425,7 @@ class storePlacesController extends Controller
        $suggests       = Suggest::all();
        $risks          = Risk::all();
        $data['stores'] = $stores->map(function ($store){
-           return $this->responseStorePlace($store);
+           return $this->responsNear($store);
        })->toArray();
        $data['suggests']=  $suggests->map(function ($suggest){
            return $this->responseSuggest($suggest);
@@ -436,14 +453,14 @@ class storePlacesController extends Controller
 
        if ($validator->passes()) {
            $disance        = is_null($request['distance'])?15:(int)$request['distance'];
-           $placeIds       =  get_near($request['lat'], $request['lng'], $disance, $request['type']);
+           $placeIds       =  get_near($request['lat'], $request['lng'], $disance, $request['type'], "store_places");
            $suggestIds     =  get_near($request['lat'], $request['lng'], $disance, $request['type'], "suggests");
            $riskIds        =  get_near($request['lat'], $request['lng'], $disance, $request['type'], "risks");
            $stores         = StorePlace::whereIn('id',$placeIds)->get();
            $suggests       = Suggest::whereIn('id',$suggestIds)->get();
            $risks          = Risk::whereIn('id',$riskIds)->get();
            $data['stores'] = $stores->map(function ($store){
-               return $this->responseStorePlace($store);
+               return $this->responsNear($store);
            })->toArray();
            $data['suggests']=  $suggests->map(function ($suggest){
                return $this->responseSuggest($suggest);

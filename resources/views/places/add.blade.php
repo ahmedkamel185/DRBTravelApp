@@ -3,7 +3,7 @@
 
 @endsection
 @section('bread')
-    <li><a href="{{route('store.index')}}" style="color: white">Manage Suggested Places</a></li>
+    <li><a href="{{route('place.index')}}" style="color: white">Manage Suggested Places</a></li>
     <li class="active" style="color: white;font-size: larger"> Add New Place </li>
 @endsection
 

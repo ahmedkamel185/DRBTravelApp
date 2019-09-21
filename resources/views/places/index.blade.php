@@ -24,9 +24,9 @@
 
                 <div class="col-md-3">
                     <img src="{{asset('/uploads/suggests/'.$place->image)}}"
-                         width="100px"
-                         height="100px"
-                         class="img-circle d-inline" alt="">
+                         width="200px"
+                         height="200px"
+                         class="" alt="">
                 </div>
                 <div class="col-md-6">
                     <ul class="admin_info_new">

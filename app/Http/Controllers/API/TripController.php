@@ -1040,14 +1040,36 @@ class TripController extends Controller
                 $comment->user_id       = $request['user_id'] ;
                 $comment->body          = $request['body'] ;
                 $comment->save();
-                $publishing->publisher->notify(new commentNotify
-                     (
-                        $publishing->publisher,
-                        "publishing",
-                        $publishing->id,
-                        $comment
-                    )
-                );
+
+
+
+
+                if($publishing->sharer_id)
+                {
+                    
+                    $publishing->sharer->notify(new commentNotify
+                        (
+                            $publishing->sharer,
+                            "publishing",
+                            $publishing->id,
+                            $comment
+                        )
+                    );
+                }
+                else
+                {
+                    $publishing->publisher->notify(new commentNotify
+                        (
+                            $publishing->publisher,
+                            "publishing",
+                            $publishing->id,
+                            $comment
+                        )
+                    );
+                }
+
+
+
                 publisher_log(
                     $request['user_id'],
                     ' لقد قمت باضافة تعليق ل '.$comment->publishing->publisher->display_name,
@@ -1273,14 +1295,31 @@ class TripController extends Controller
                     $like->publishing_id    = $request['publishing_id'];
                     $like->save();
                     $msg = $request['lang'] == 'ar' ? ' تم الاعجاب.' : ' sucessfull liked.';
-                    $publishing->publisher->notify(new LikeNotify
-                        (
-                            $publishing->publisher,
-                            "publishing",
-                            $publishing->id,
-                            $like
-                        )
-                    );
+
+
+                    if($publishing->sharer_id)
+                    {
+                        $publishing->sharer->notify(new LikeNotify
+                            (
+                                $publishing->sharer,
+                                "publishing",
+                                $publishing->id,
+                                $like
+                            )
+                        );
+                    }
+                    else
+                    {
+                        $publishing->publisher->notify(new LikeNotify
+                            (
+                                $publishing->publisher,
+                                "publishing",
+                                $publishing->id,
+                                $like
+                            )
+                        );
+                    }
+
                     publisher_log(
                         $request['user_id'],
                         ' لقد قمت  بالاعجاب ل '.$like->publishing->publisher->display_name,

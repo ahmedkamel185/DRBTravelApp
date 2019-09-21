@@ -76,7 +76,7 @@ class UsersController extends Controller
     {
 
         $publisher =  Publisher::find($id);
-        $trips = $publisher->trips->all();
+        $trips = $publisher->trips()->orderby('created_at','DESC')->get();
            return view('users.show')
                ->with('user',$publisher)
                ->with('trips',$trips)

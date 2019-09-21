@@ -196,6 +196,10 @@ class PublisherController extends Controller
             }
             $user = auth('publisher')->user();
 
+            $user->device_id = $request['device_id'];
+            $user->device_type = $request['device_type'];
+            $user->save();
+
 //             if($user->verified == 0){
 //                 $msg = $request['lang'] == 'ar' ? 'لم يتم تاكيد الحساب بعد.' : 'account not verfied .';
 //                 return response()->json(['status'=>false,'msg'=>$msg]);

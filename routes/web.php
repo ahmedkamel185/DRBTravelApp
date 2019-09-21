@@ -246,6 +246,8 @@ Route::group( [
 {
     Route::get('index','ImagesController@index')->name('image.index');
 
+    Route::get('image/{id}','ImagesController@image')->name('image.image');
+
 
 
 });
@@ -267,6 +269,9 @@ Route::group( [
 ], function()
 {
     Route::get('index','VideosController@index')->name('video.index');
+
+    Route::get('video/{id}','VideosController@video')->name('video.video');
+
 
 
 

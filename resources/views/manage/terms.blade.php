@@ -10,13 +10,13 @@
     <form action="{{route('manage.terms.update',['id'=>$terms->id])}}" method="post">
         @csrf
         <div class="form-group">
-            <label>Textarea</label>
+            <label>الشروط والاحكام</label>
             <textarea class="form-control" name="terms_ar" rows="5">{{$terms->terms_ar}}</textarea>
 
         </div>
 
         <div class="form-group">
-            <label>Textarea</label>
+            <label>Terms and Condition</label>
             <textarea class="form-control" name="terms_en" rows="5">{{$terms->terms_en}}</textarea>
 
         </div>
