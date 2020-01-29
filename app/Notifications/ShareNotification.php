@@ -49,7 +49,7 @@ class ShareNotification extends Notification
         $image     = asset('uploads/publishers') . '/' . $this->sharer->image;
         $data = [
             'pid'     =>$this->sharer->id,
-            'type'    => 'sharer',
+            'type'    => 'spot',
             'title_ar'=>$title_ar,
             'title_en'=>$title_en,
             'msg_ar'  =>$title_ar,

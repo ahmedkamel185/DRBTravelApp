@@ -17,7 +17,15 @@
             </div>
             <div class="panel-body">
                <a href="#" class="fa fa-share-alt" style="float: right"> <span>{{\App\Models\Publishing::where('trip_id', $trip->id)->whereNotNull('sharer_id')->count()}}</span></a><br>
-                <a href="#" class="fa fa-thumbs-up" style="float: right"> <span>{{\App\Models\Publishing::where('trip_id', $trip->id)->where('publisher_id',$trip->publisher->id)->first()->likes->count()}}</span></a>
+                <a href="#" class="fa fa-thumbs-up" style="float: right"> <span>
+                        @php
+                        $likeS = \App\Models\Publishing::where('trip_id', $trip->id)->where('publisher_id',$trip->publisher->id)->first();
+                        if($likeS)
+                            echo $likeS->likes->count();
+                        else
+                            echo  0;
+                        @endphp
+                    </span></a>
 
 
 

@@ -15,6 +15,19 @@ class Publisher extends Authenticatable
         'username', 'email', 'password','mobile','device_id',
     ];
 
+    // spots
+    public function spots()
+    {
+        return $this->hasMany("App\Models\Spot");
+    }
+
+    // journals
+    public function journals()
+    {
+        return $this->hasMany("App\Models\Journal");
+    }
+
+    // trips
     public function trips()
     {
         return $this->hasMany('App\Models\Trip','publisher_id','id');
@@ -51,13 +64,14 @@ class Publisher extends Authenticatable
     //likes
     public function likes()
     {
-        return $this->hasMany('App\Models\Like','user_id','id');
+        return $this->hasMany('App\Models\Like','publisher_id');
     }
+
 
     //likes
     public function comments()
     {
-        return $this->hasMany('App\Models\Comment','user_id','id');
+        return $this->hasMany('App\Models\Comment','publisher_id');
     }
  // suggest
     public function suggest()
@@ -81,9 +95,9 @@ class Publisher extends Authenticatable
     /*======================*/
     // favourtits
 
-    public function favourits()
+    public function favourites()
     {
-        return $this->hasMany('App\Models\Favourit','user_id','id');
+        return $this->hasMany('App\Models\Favourite','publisher_id');
     }
 
     // follows

@@ -8,6 +8,7 @@ use File;
 use URL;
 use Image;
 use Validator;
+use App\Models\Publisher as User;
 use App\Models\RiskComment as RiskComment;
 
 
@@ -31,11 +32,16 @@ class RiskCommentController extends Controller
         ]);
         if ($validator->passes()){
 
-        $publisher_id = !!RiskComment::where('publisher_id', $request->publisher_id)->first();
-        $risk_id = !!RiskComment::where('risk_id', $request->risk_id)->first();
-        if ($publisher_id && $risk_id)
+
+            $comment = RiskComment::where('publisher_id', $request['publisher_id'])
+                ->where('risk_id', $request['risk_id'])->first();
+
+
+       /* $publisher_id = !!RiskComment::where('publisher_id', $request->publisher_id)->first();
+        $risk_id = !!RiskComment::where('risk_id', $request->risk_id)->first();*/
+        if ($comment)
         {
-                $riskComment                       = RiskComment::where('publisher_id',$request->publisher_id)->where('risk_id',$request->risk_id)->first();
+                $riskComment                       = RiskComment::where('publisher_id',$request['publisher_id'])->where('risk_id',$request['risk_id'])->first();
                 $riskComment->vote                 = $request['vote'];
                 $riskComment->risk_id              = $request['risk_id'];
                 $riskComment->publisher_id         = $request['publisher_id'];
@@ -43,8 +49,7 @@ class RiskCommentController extends Controller
                 $riskComment->save();
                 $msg = $request['lang'] == 'ar' ? 'تم تعديل تعليق علي الخطر ':" comment updated success";
                 return response()->json(['status'=>true,'data' => ['trip'=>['id'=>null]], 'msg' => $msg]);
-
-            }
+        }
 
 
         $riskComment                       = new RiskComment;

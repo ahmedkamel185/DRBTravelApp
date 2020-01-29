@@ -48,13 +48,13 @@ class Follow extends Notification
     {
         $user      = $this->follower;
         $title_ar  = " قام  {$user->display_name} بعمل متابعه لك" ;
-        $title_en  = "{$this->user->display_name} follow you" ;
+        $title_en  = "{$user->display_name} follow you" ;
         $msg_ar    = "يمكن مشاهدة ملفه الشخصى";
         $msg_en    = 'can see profile';
         $image     = asset('uploads/publishers') . '/' . $user->image;
         $data = [
             'pid'      =>$this->follower->id,
-            'type'    => "follow",
+            'type'    => "user",
             'title_ar'=>$title_ar,
             'title_en'=>$title_en,
             'msg_ar'  =>$msg_ar,

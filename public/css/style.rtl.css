@@ -1,0 +1,56 @@
+
+@import url('https://fonts.googleapis.com/earlyaccess/droidarabickufi.css');
+@import url('http://fonts.googleapis.com/earlyaccess/droidarabicnaskh.css');
+
+
+body,h1,h2,h3,a,p{
+  font-family: "Droid Arabic Kufi",'Droid Arabic Naskh',"tahoma" !important ;
+  letter-spacing: normal !important;
+}	
+p{
+	direction: rtl;
+	font-size: 13px;
+	/*font-family: 'Droid Arabic Naskh' !important;*/
+}
+
+
+.navigation .navbar,
+.hero-inner,
+.features-style-one,
+.intigration-section,
+#contact,
+#features,
+footer{
+	direction: rtl;
+}
+.hero-type{
+	text-align: right;
+}
+#hero-bg:after,
+a.more i{
+	transform: rotatey(-180deg);
+}
+.hero-image img{
+	-webkit-transform: scaleX(-1);
+	-moz-transform: scaleX(-1);
+	-o-transform: scaleX(-1);
+	transform: scaleX(-1);
+
+	filter: FlipH;
+	-ms-filter: "FlipH";
+}
+.icon-contact{
+	margin-right:0;
+	margin-left: 15px;
+}
+.icon-contact{
+	float: right;
+}
+.features-style-one .feature-style-content a.more:hover{
+	 transform: translateX(-4px);
+}
+@media only screen and (max-width: 991px){
+	.navigation .navbar{
+		direction: ltr;
+	}
+}

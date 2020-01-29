@@ -150,7 +150,8 @@ class storePlacesController extends Controller
         $res['lng']             =  $risk->lng;
         $res['address']         =  $risk->address;
         $res['desc']            = $risk->desc;
-
+        $res['created_at']     =strtotime($risk->created_at) * 1000;
+      
         $image                  =  is_null($risk['image'])? "default_image.png" : $risk['image'];
         $res['image']           =  asset('uploads/risks') . '/' . $image;
         $res['status']          =  $risk->status;

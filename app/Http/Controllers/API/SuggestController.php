@@ -22,74 +22,86 @@ class SuggestController extends Controller
     //response suggest
     protected function responseSuggest($suggest, $user_id = 0)
     {
-        $res["id"]              = $suggest->id;
-        $res["lat"]             = $suggest->lat;
-        $res["lng"]             = $suggest->lng;
-        $res["address"]         = $suggest->address;
-        $res["desc"]            = $suggest->desc;
-        $res["user_id"]         = $suggest->user_id;
-        $image                  = is_null($suggest['image'])? "default_image.png" : $suggest['image'];
-        $res['image']           = asset('uploads/suggests') . '/' . $image;
-        $res['comments']        = $suggest->comments->count();
-        $res['likes_count']     = $suggest->likes->count();
-        $res['likes_latest']    = $res['likes_count'] >0? $suggest->likes()->latest()->first()->user->display_name:"";
-        $res['created_at']      = $suggest->created_at->format('d-m-Y h:i a');
-        $res['publisher']       = Publisher::find($suggest->user_id);
+        $res["id"] = $suggest->id;
+        $res["lat"] = $suggest->lat;
+        $res["lng"] = $suggest->lng;
+        $res["address"] = $suggest->address;
+        $res["desc"] = $suggest->desc;
+        $res["user_id"] = $suggest->user_id;
+        $image = is_null($suggest['image']) ? "default_image.png" : $suggest['image'];
+        $res['image'] = asset('uploads/suggests') . '/' . $image;
+        $res['comments'] = $suggest->comments->count();
+        $res['likes_count'] = $suggest->likes->count();
+        $res['likes_latest'] = $res['likes_count'] > 0 ? $suggest->likes()->latest()->first()->user->display_name : "";
+        $res['created_at'] = $suggest->created_at->format('d-m-Y h:i a');
+        $res['publisher'] = Publisher::find($suggest->user_id);
         return $res;
     }
 
     // response comment
-    protected function   responseComment($comment,$user_id =0){
-        $res['id']             =  $comment->id;
-        $res['body']           =  $comment->body;
-        $res['user']           =  $this->responseUser($comment->user);
-        $res['suggest_id']     = $comment->suggest_id;
-        $res['created_at']     = $comment->created_at->format('d-m-Y h:i a');
-        $res['status']         = $user_id == 0? true : $user_id==$comment->user_id;
-        return $res;
-    }
-    // response like
-    protected function responseLike($like){
-        $res['id']             = $like['id'];
-        $res['user']           = $this->responseUser($like->User);
-        $res['suggest_id']     = $like->suggest_id;
-        $res['created_at']     = $like->created_at->format('d-m-Y h:i a');
-        return $res;
-    }
-    // response user
-    protected function responseUser($user, $type=1)
+    protected function responseComment($comment, $user_id = 0)
     {
-        $res["id"]              = $user->id;
-        $res["username"]        = $user->username;
-        $res["display_name"]    = $user->display_name;
-        $image                  = is_null($user['image'])? "default_image.png" : $user['image'];
-        $res['image']           = asset('uploads/publishers') . '/' . $image;
-        $res['type']            = $type;
+        $res['id'] = $comment->id;
+        $res['body'] = $comment->body;
+        $res['user'] = $this->responseUser($comment->user);
+        $res['suggest_id'] = $comment->suggest_id;
+        $res['created_at'] = $comment->created_at->format('d-m-Y h:i a');
+        $res['status'] = $user_id == 0 ? true : $user_id == $comment->user_id;
+        return $res;
+    }
+
+    // response like
+    protected function responseLike($like)
+    {
+        $res['id'] = $like['id'];
+        $res['user'] = $this->responseUser($like->User);
+        $res['suggest_id'] = $like->suggest_id;
+        $res['created_at'] = $like->created_at->format('d-m-Y h:i a');
+        return $res;
+    }
+
+    // response user
+    protected function responseUser($user, $type = 1)
+    {
+        $res["id"] = $user->id;
+        $res["username"] = $user->username;
+        $res["display_name"] = $user->display_name;
+        $image = is_null($user['image']) ? "default_image.png" : $user['image'];
+        $res['image'] = asset('uploads/publishers') . '/' . $image;
+        $res['type'] = $type;
         return $res;
     }
 
     // add
-    public  function addSuugest(Request $request){
-        $validator=Validator::make($request->all(),[
-            "lat"           => 'required',
-            'lng'           => 'required',
-            'address'       => 'required|min:2|max:190',
-            'user_id'       => 'required|exists:publishers,id',
-            'desc'          => 'required',
-            'image'         => 'required|image'
+    public function addSuugest(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "lat" => 'required',
+            'lng' => 'required',
+            'address' => 'required|min:2|max:190',
+            'user_id' => 'required|exists:publishers,id',
+            'desc' => 'nullable',
+            'image' => 'nullable|image',
+
         ]);
         if ($validator->passes()) {
-            $suggest            = new Suggest;
-            $suggest->lat       = $request['lat'];
-            $suggest->lng       = $request['lng'];
-            $suggest->address   = $request['address'];
-            $suggest->user_id   = $request['user_id'];
-            $suggest->desc      = $request['desc'];
-            $photo=$request->image;
-            $name = date('d-m-y').time().rand().'.'.$photo->getClientOriginalExtension();
+            $suggest = new Suggest;
+            $suggest->lat = $request['lat'];
+            $suggest->lng = $request['lng'];
+            $suggest->address = $request['address'];
+            $suggest->user_id = $request['user_id'];
+
+            if ($request['desc']) {
+                $suggest->desc = $request['desc'];
+            }
+            if ($request['image']) {
+                $photo = $request->image;
+                $name = date('d-m-y') . time() . rand() . '.' . $photo->getClientOriginalExtension();
 //            Image::make($photo)->save('uploads/suggests/'.$name);
-            $photo->move(public_path('uploads/suggests'), $name);
-            $suggest->image      = $name;
+                $photo->move(public_path('uploads/suggests'), $name);
+                $suggest->image = $name;
+            }
+
             $suggest->save();
             publisher_log(
                 $request['user_id'],
@@ -100,14 +112,58 @@ class SuggestController extends Controller
             return response()->json(
                 [
                     'status' => true,
-                    'data' => ['suggest'=>['id'=>null]],
-                    'msg'=>$msg
+                    'data' => ['suggest' => ['id' => null]],
+                    'msg' => $msg
                 ]
             );
+        } else {
+            foreach ((array)$validator->errors() as $key => $value) {
+                foreach ($value as $msg) {
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
         }
-        else{
-            foreach ((array)$validator->errors() as $key => $value){
-                foreach ($value as $msg){
+    }
+
+    public function suggest_without_image(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "lat" => 'required',
+            'lng' => 'required',
+            'address' => 'required|min:2|max:190',
+            'user_id' => 'required|exists:publishers,id',
+            'desc' => 'nullable',
+
+        ]);
+        if ($validator->passes()) {
+            $suggest = new Suggest;
+            $suggest->lat = $request['lat'];
+            $suggest->lng = $request['lng'];
+            $suggest->address = $request['address'];
+            $suggest->user_id = $request['user_id'];
+            $suggest->image = 'null';
+
+            if ($request['desc']) {
+                $suggest->desc = $request['desc'];
+            }
+            else
+            {
+                $suggest->desc = 'null';
+            }
+
+            $suggest->save();
+
+            $msg = $request['lang'] == 'ar' ? ' تم الاضافه بنجاح.' : ' sucessfull upload .';
+            return response()->json(
+                [
+                    'status' => true,
+                    'data' => ['suggest' => ['id' => null]],
+                    'msg' => $msg
+                ]
+            );
+        } else {
+            foreach ((array)$validator->errors() as $key => $value) {
+                foreach ($value as $msg) {
                     return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
@@ -116,52 +172,52 @@ class SuggestController extends Controller
 
 
     // repsonse near
-    protected function responsNear($place,$lat,$lng ,$unit){
-        $res['suggest'] =  $this->responseSuggest($place);
+    protected function responsNear($place, $lat, $lng, $unit)
+    {
+        $res['suggest'] = $this->responseSuggest($place);
 //        $res['publisher']  =  $this->responseUser($place->publisher);
-        $res['disance']=  distance($lat , $lng ,$place,$unit);
+        $res['disance'] = distance($lat, $lng, $place, $unit);
         return $res;
     }
 
 
-
-
     // edit
-    public  function editSuugest(Request $request){
-        $validator=Validator::make($request->all(),[
-            "lat"           => 'required',
-            'lng'           => 'required',
-            'address'       => 'required|min:2|max:190',
-            'user_id'       => 'required|exists:publishers,id',
-            'suggest_id'    => 'required|exists:suggests,id',
-            'desc'          => 'required',
-            'image'         => 'nullable|image'
+    public function editSuugest(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "lat" => 'required',
+            'lng' => 'required',
+            'address' => 'required|min:2|max:190',
+            'user_id' => 'required|exists:publishers,id',
+            'suggest_id' => 'required|exists:suggests,id',
+            'desc' => 'required',
+            'image' => 'nullable|image'
         ]);
         if ($validator->passes()) {
 
-            $suggest            = Suggest::find($request['suggest_id']);
-            if($suggest->user_id != $request['user_id']){
+            $suggest = Suggest::find($request['suggest_id']);
+            if ($suggest->user_id != $request['user_id']) {
                 $msg = $request['lang'] == 'ar' ? ' المستخدم لايملك هذا الاقتراح .' : ' user not owner the suggest.';
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => ['suggest'=>['id'=>null]],
-                        'msg'=>$msg
+                        'data' => ['suggest' => ['id' => null]],
+                        'msg' => $msg
                     ]
                 );
             }
-            $suggest->lat       = $request['lat'];
-            $suggest->lng       = $request['lng'];
-            $suggest->address   = $request['address'];
-            $suggest->user_id   = $request['user_id'];
-            $suggest->desc      = $request['desc'];
-            if($request['image']){
-                \File::delete('uploads/suggests/'.$suggest->name);
-                $photo=$request->image;
-                $name = date('d-m-y').time().rand().'.'.$photo->getClientOriginalExtension();
+            $suggest->lat = $request['lat'];
+            $suggest->lng = $request['lng'];
+            $suggest->address = $request['address'];
+            $suggest->user_id = $request['user_id'];
+            $suggest->desc = $request['desc'];
+            if ($request['image']) {
+                \File::delete('uploads/suggests/' . $suggest->name);
+                $photo = $request->image;
+                $name = date('d-m-y') . time() . rand() . '.' . $photo->getClientOriginalExtension();
 //                Image::make($photo)->save('uploads/suggests/'.$name);
                 $photo->move(public_path('uploads/suggests'), $name);
-                $suggest->image      = $name;
+                $suggest->image = $name;
 
             }
             $suggest->save();
@@ -169,14 +225,13 @@ class SuggestController extends Controller
             return response()->json(
                 [
                     'status' => true,
-                    'data' => ['suggest'=>['id'=>null]],
-                    'msg'=>$msg
+                    'data' => ['suggest' => ['id' => null]],
+                    'msg' => $msg
                 ]
             );
-        }
-        else{
-            foreach ((array)$validator->errors() as $key => $value){
-                foreach ($value as $msg){
+        } else {
+            foreach ((array)$validator->errors() as $key => $value) {
+                foreach ($value as $msg) {
                     return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
@@ -184,25 +239,26 @@ class SuggestController extends Controller
     }
 
     // delte suugest
-    public  function delteSuugest(Request $request){
-        $validator=Validator::make($request->all(),[
-            'user_id'       => 'required|exists:publishers,id',
-            'suggest_id'    => 'required|exists:suggests,id',
+    public function delteSuugest(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:publishers,id',
+            'suggest_id' => 'required|exists:suggests,id',
         ]);
         if ($validator->passes()) {
 
-            $suggest            = Suggest::find($request['suggest_id']);
-            if($suggest->user_id != $request['user_id']){
+            $suggest = Suggest::find($request['suggest_id']);
+            if ($suggest->user_id != $request['user_id']) {
                 $msg = $request['lang'] == 'ar' ? ' المستخدم لايملك هذا الاقتراح .' : ' user not owner the suggest.';
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => ['suggest'=>['id'=>null]],
-                        'msg'=>$msg
+                        'data' => ['suggest' => ['id' => null]],
+                        'msg' => $msg
                     ]
                 );
             }
-            \File::delete('uploads/suggests/'.$suggest->name);
+            \File::delete('uploads/suggests/' . $suggest->name);
             $suggest->delete();
             publisher_log(
                 $request['user_id'],
@@ -213,14 +269,13 @@ class SuggestController extends Controller
             return response()->json(
                 [
                     'status' => true,
-                    'data' => ['suggest'=>['id'=>null]],
-                    'msg'=>$msg
+                    'data' => ['suggest' => ['id' => null]],
+                    'msg' => $msg
                 ]
             );
-        }
-        else{
-            foreach ((array)$validator->errors() as $key => $value){
-                foreach ($value as $msg){
+        } else {
+            foreach ((array)$validator->errors() as $key => $value) {
+                foreach ($value as $msg) {
                     return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
@@ -228,26 +283,26 @@ class SuggestController extends Controller
     }
 
     //get suggest
-    public  function getSuugest(Request $request){
-        $validator=Validator::make($request->all(),[
-            'user_id'       => 'required|exists:publishers,id',
-            'suggest_id'    => 'required|exists:suggests,id',
+    public function getSuugest(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:publishers,id',
+            'suggest_id' => 'required|exists:suggests,id',
         ]);
         if ($validator->passes()) {
 
-            $suggest            = Suggest::find($request['suggest_id']);
+            $suggest = Suggest::find($request['suggest_id']);
 
             return response()->json(
                 [
                     'status' => true,
-                    'data' => ['suggest'=>$this->responseSuggest($suggest, $request['user_id'])],
-                    'msg'=>""
+                    'data' => ['suggest' => $this->responseSuggest($suggest, $request['user_id'])],
+                    'msg' => ""
                 ]
             );
-        }
-        else{
-            foreach ((array)$validator->errors() as $key => $value){
-                foreach ($value as $msg){
+        } else {
+            foreach ((array)$validator->errors() as $key => $value) {
+                foreach ($value as $msg) {
                     return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
@@ -255,31 +310,31 @@ class SuggestController extends Controller
     }
 
     //get suggest
-    public  function getSuugests(Request $request){
-        $validator=Validator::make($request->all(),[
-            'user_id'       => 'required|exists:publishers,id',
+    public function getSuugests(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:publishers,id',
         ]);
         if ($validator->passes()) {
-            $blocks             = Block::buldBlockId($request['user_id']);
-            $blockingMe         = Block::buldBlockerId($request['user_id']);
-            $allBlocks          = array_merge($blocks, $blockingMe);
-            $suggests           = Suggest::whereNotIn('user_id', $allBlocks )->latest()->simplePaginate(10);
-            $meta               = getBasicInfoPagantion($suggests);
-            $data               = getCollectionPagantion($suggests)->map(function ($suggest) use($request){
+            $blocks = Block::buldBlockId($request['user_id']);
+            $blockingMe = Block::buldBlockerId($request['user_id']);
+            $allBlocks = array_merge($blocks, $blockingMe);
+            $suggests = Suggest::whereNotIn('user_id', $allBlocks)->latest()->simplePaginate(10);
+            $meta = getBasicInfoPagantion($suggests);
+            $data = getCollectionPagantion($suggests)->map(function ($suggest) use ($request) {
                 return $this->responseSuggest($suggest, $request['user_id']);
             });
             return response()->json(
                 [
                     'status' => true,
-                    'data' => ["suggests"=>['suggests'=>$data,'meta'=>$meta]],
-                    'msg'  =>"" ,
+                    'data' => ["suggests" => ['suggests' => $data, 'meta' => $meta]],
+                    'msg' => "",
 //                    'meta' => $meta
                 ]
             );
-        }
-        else{
-            foreach ((array)$validator->errors() as $key => $value){
-                foreach ($value as $msg){
+        } else {
+            foreach ((array)$validator->errors() as $key => $value) {
+                foreach ($value as $msg) {
                     return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
@@ -287,43 +342,42 @@ class SuggestController extends Controller
     }
 
     //get suggest
-    public  function getUserSuggest(Request $request){
-        $validator=Validator::make($request->all(),[
-            'user_id'       => 'required|exists:publishers,id',
-            'publisher_id'  => 'required|exists:publishers,id',
+    public function getUserSuggest(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:publishers,id',
+            'publisher_id' => 'required|exists:publishers,id',
         ]);
         if ($validator->passes()) {
-            $blocks             = Block::buldBlockId($request['user_id']);
-            $blockingMe         = Block::buldBlockerId($request['user_id']);
-            $allBlocks          = array_merge($blocks, $blockingMe);
-            if(in_array($request['publisher_id'], $allBlocks))
-            {
+            $blocks = Block::buldBlockId($request['user_id']);
+            $blockingMe = Block::buldBlockerId($request['user_id']);
+            $allBlocks = array_merge($blocks, $blockingMe);
+            if (in_array($request['publisher_id'], $allBlocks)) {
                 $msg = $request['lang'] == 'ar' ? ' لايمكنك التواصل مع هذا المستخدم.' : ' you cna\'t trait with this user.';
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => ['suggest'=>['id'=>null]],
-                        'msg'=>$msg
+                        'data' => ['suggest' => ['id' => null]],
+                        'msg' => $msg
                     ]
                 );
             }
-            $suggests           = Suggest::where('user_id', $request['publisher_id'] )->simplePaginate(10);
-            $meta               = getBasicInfoPagantion($suggests);
-            $data               = getCollectionPagantion($suggests)->map(function ($suggest) use($request){
-              return   $this->responseSuggest($suggest, $request['user_id']);
+            $suggests = Suggest::where('user_id', $request['publisher_id'])->simplePaginate(10);
+            $meta = getBasicInfoPagantion($suggests);
+            $data = getCollectionPagantion($suggests)->map(function ($suggest) use ($request) {
+                return $this->responseSuggest($suggest, $request['user_id']);
             });
             return response()->json(
                 [
                     'status' => true,
-                    'data' => ['suggest'=>$data],
-                    'msg'  =>"" ,
+                    'data' => ['suggest' => $data],
+                    'msg' => "",
                     'meta' => $meta
                 ]
             );
-        }
-        else{
-            foreach ((array)$validator->errors() as $key => $value){
-                foreach ($value as $msg){
+        } else {
+            foreach ((array)$validator->errors() as $key => $value) {
+                foreach ($value as $msg) {
                     return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
@@ -332,45 +386,46 @@ class SuggestController extends Controller
 
 
     // save comment
-    public function saveComment(Request $request){
-        $validator=Validator::make($request->all(),[
-            'suggest_id'     => 'required|exists:suggests,id',
-            'user_id'        => 'required|exists:publishers,id',
-            'body'           => 'required',
+    public function saveComment(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'suggest_id' => 'required|exists:suggests,id',
+            'user_id' => 'required|exists:publishers,id',
+            'body' => 'required',
         ]);
 
         if ($validator->passes()) {
-                $comment                = new Comment;
-                $comment->suggest_id    = $request['suggest_id'] ;
-                $comment->user_id       = $request['user_id'] ;
-                $comment->body          = $request['body'] ;
-                $comment->save();
+            $comment = new Comment;
+            $comment->suggest_id = $request['suggest_id'];
+            $comment->user_id = $request['user_id'];
+            $comment->body = $request['body'];
+            $comment->save();
 
-                publisher_log(
-                    $request['user_id'],
-                    ' لقد قمت باضافة تعليق ل '.$comment->suggest->publisher->display_name,
-                    'you  add  the comment to'.$comment->suggest->publisher->display_name
-                );
-               $comment->suggest->publisher->notify(new commentNotify
+            publisher_log(
+                $request['user_id'],
+                ' لقد قمت باضافة تعليق ل ' . $comment->suggest->publisher->display_name,
+                'you  add  the comment to' . $comment->suggest->publisher->display_name
+            );
+            $comment->suggest->publisher->notify(new commentNotify
                 (
                     $comment->suggest->publisher,
                     "suggest",
                     $comment->id,
                     $comment
                 )
-               );
-                $msg = $request['lang'] == 'ar' ? ' تم اضافة التعليق.' : ' sucessfull add comment.';
-                return response()->json(
-                    [
-                        'status' => true,
-                        'data'   => [ "comment" => $this->responseComment($comment) ],
-                        'msg'    =>$msg
-                    ]
-                );
+            );
+            $msg = $request['lang'] == 'ar' ? ' تم اضافة التعليق.' : ' sucessfull add comment.';
+            return response()->json(
+                [
+                    'status' => true,
+                    'data' => ["comment" => $this->responseComment($comment)],
+                    'msg' => $msg
+                ]
+            );
 
-        }else{
-            foreach ((array)$validator->errors() as $key => $value){
-                foreach ($value as $msg){
+        } else {
+            foreach ((array)$validator->errors() as $key => $value) {
+                foreach ($value as $msg) {
                     return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
@@ -378,39 +433,40 @@ class SuggestController extends Controller
     }
 
     // delete comment
-    public function deleteComment(Request $request){
+    public function deleteComment(Request $request)
+    {
 
-        $validator=Validator::make($request->all(),[
-            'comment_id'     => 'required|exists:comment_suggests,id',
-            'user_id'        => 'required|exists:publishers,id',
+        $validator = Validator::make($request->all(), [
+            'comment_id' => 'required|exists:comment_suggests,id',
+            'user_id' => 'required|exists:publishers,id',
         ]);
 
         if ($validator->passes()) {
-            $comment                = Comment::find($request['comment_id']);
-            if( $comment->user_id == $request['user_id'] ){
+            $comment = Comment::find($request['comment_id']);
+            if ($comment->user_id == $request['user_id']) {
                 $comment->delete();
                 $msg = $request['lang'] == 'ar' ? ' تم حذف التعليق.' : ' sucessfull delete comment.';
                 return response()->json(
                     [
                         'status' => true,
-                        'data'   => "",
-                        'msg'    =>$msg
+                        'data' => "",
+                        'msg' => $msg
                     ]
                 );
-            }else{
+            } else {
                 $msg = $request['lang'] == 'ar' ? ' التعليق غير موجود ف تعليقاتك .' : 'comment not found in comments.';
                 return response()->json(
                     [
                         'status' => false,
                         'data' => "",
-                        'msg'=>$msg
+                        'msg' => $msg
                     ]
                 );
             }
 
-        }else{
-            foreach ((array)$validator->errors() as $key => $value){
-                foreach ($value as $msg){
+        } else {
+            foreach ((array)$validator->errors() as $key => $value) {
+                foreach ($value as $msg) {
                     return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
@@ -418,37 +474,38 @@ class SuggestController extends Controller
     }
 
     // get comment
-    public function getComment(Request $request){
+    public function getComment(Request $request)
+    {
 
-        $validator=Validator::make($request->all(),[
-            'comment_id'     => 'required|exists:comment_suggests,id',
-            'user_id'        => 'required|exists:publishers,id',
+        $validator = Validator::make($request->all(), [
+            'comment_id' => 'required|exists:comment_suggests,id',
+            'user_id' => 'required|exists:publishers,id',
         ]);
 
         if ($validator->passes()) {
-            $comment                = Comment::find($request['comment_id']);
-            if( $comment->user_id == $request['user_id'] ){
+            $comment = Comment::find($request['comment_id']);
+            if ($comment->user_id == $request['user_id']) {
                 return response()->json(
                     [
                         'status' => true,
-                        'data'   =>[ "comment" => $this->responseComment($comment) ],
-                        'msg'    =>""
+                        'data' => ["comment" => $this->responseComment($comment)],
+                        'msg' => ""
                     ]
                 );
-            }else{
+            } else {
                 $msg = $request['lang'] == 'ar' ? ' التعليق غير موجود ف تعليقاتك .' : 'comment not found in comments.';
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => ['comment'=>['id'=>null]],
-                        'msg'=>$msg
+                        'data' => ['comment' => ['id' => null]],
+                        'msg' => $msg
                     ]
                 );
             }
 
-        }else{
-            foreach ((array)$validator->errors() as $key => $value){
-                foreach ($value as $msg){
+        } else {
+            foreach ((array)$validator->errors() as $key => $value) {
+                foreach ($value as $msg) {
                     return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
@@ -456,40 +513,41 @@ class SuggestController extends Controller
     }
 
     // update comment
-    public function updateComment(Request $request){
+    public function updateComment(Request $request)
+    {
 
-        $validator=Validator::make($request->all(),[
-            'comment_id'     => 'required|exists:comment_suggests,id',
-            'user_id'        => 'required|exists:publishers,id',
-            'body'           => 'required'
+        $validator = Validator::make($request->all(), [
+            'comment_id' => 'required|exists:comment_suggests,id',
+            'user_id' => 'required|exists:publishers,id',
+            'body' => 'required'
         ]);
 
         if ($validator->passes()) {
-            $comment                = Comment::find($request['comment_id']);
-            if( $comment->user_id == $request['user_id'] ){
-                $comment->body    = $request['body'];
+            $comment = Comment::find($request['comment_id']);
+            if ($comment->user_id == $request['user_id']) {
+                $comment->body = $request['body'];
                 $comment->save();
                 return response()->json(
                     [
                         'status' => true,
-                        'data'   => [ "comment" => $this->responseComment($comment) ],
-                        'msg'    =>""
+                        'data' => ["comment" => $this->responseComment($comment)],
+                        'msg' => ""
                     ]
                 );
-            }else{
+            } else {
                 $msg = $request['lang'] == 'ar' ? ' التعليق غير موجود ف تعليقاتك .' : 'comment not found in comments.';
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => ['comment'=>['id'=>null]],
-                        'msg'=>$msg
+                        'data' => ['comment' => ['id' => null]],
+                        'msg' => $msg
                     ]
                 );
             }
 
-        }else{
-            foreach ((array)$validator->errors() as $key => $value){
-                foreach ($value as $msg){
+        } else {
+            foreach ((array)$validator->errors() as $key => $value) {
+                foreach ($value as $msg) {
                     return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
@@ -497,43 +555,44 @@ class SuggestController extends Controller
     }
 
     // get all comment
-    public function getComments(Request $request){
+    public function getComments(Request $request)
+    {
 
-        $validator=Validator::make($request->all(),[
-            'suggest_id'     => 'required|exists:suggests,id',
-            'user_id'        => 'required|exists:publishers,id',
+        $validator = Validator::make($request->all(), [
+            'suggest_id' => 'required|exists:suggests,id',
+            'user_id' => 'required|exists:publishers,id',
         ]);
 
         if ($validator->passes()) {
-            $suggest                = Suggest::find($request['suggest_id']);
+            $suggest = Suggest::find($request['suggest_id']);
 
             // check privacy
-            if($suggest->privacy != "private"){
-                $data  = $suggest->comments->map(function ($comment) use($request){
+            if ($suggest->privacy != "private") {
+                $data = $suggest->comments->map(function ($comment) use ($request) {
                     return $this->responseComment($comment, $request['user_id']);
-                }) ;
+                });
                 return response()->json(
                     [
                         'status' => true,
-                        'data'   =>['comments'=> $data],
-                        'msg'    =>""
+                        'data' => ['comments' => $data],
+                        'msg' => ""
                     ]
                 );
-            }else{
+            } else {
                 $msg = $request['lang'] == 'ar' ? ' ليس لديك صلاحيه للتعليق .' : ' privacy not allow you to comment.';
                 return response()->json(
                     [
                         'status' => false,
-                        'data' => ['comments'=>['id'=>null]],
-                        'msg'=>$msg
+                        'data' => ['comments' => ['id' => null]],
+                        'msg' => $msg
                     ]
                 );
             }
 
 
-        }else{
-            foreach ((array)$validator->errors() as $key => $value){
-                foreach ($value as $msg){
+        } else {
+            foreach ((array)$validator->errors() as $key => $value) {
+                foreach ($value as $msg) {
                     return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
@@ -542,57 +601,58 @@ class SuggestController extends Controller
 
 
     // likes action delete and add
-    public function likeAction(Request $request){
-        $validator=Validator::make($request->all(),[
-            'suggest_id'     => 'required|exists:suggests,id',
-            'user_id'        => 'required|exists:publishers,id',
+    public function likeAction(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'suggest_id' => 'required|exists:suggests,id',
+            'user_id' => 'required|exists:publishers,id',
         ]);
 
         if ($validator->passes()) {
-                $like     = Like::where('suggest_id', $request['suggest_id'])
-                    ->where('user_id', $request['user_id'])->first();
-                if($like) {
-                    $msg = $request['lang'] == 'ar' ? ' تم حذف الاعجاب.' : ' sucessfull delete liked.';
-                    $suugest  = Suggest::find($request['suggest_id']);
-                    $suugest->publisher->notify(new LikeNotify
-                        (
-                            $suugest->publisher,
-                            "suggest",
-                            $suugest->id,
-                            $like
-                        )
-                    );
-                    publisher_log(
-                        $request['user_id'],
-                        ' لقد قمت بحذف الاعجاب ل '.$like->suggest->publisher->display_name,
-                        'you delete the like for'.$like->suggest->publisher->display_name
-                    );
-                    $like->delete();
-                } else{
-                    $like                   = new Like;
-                    $like->user_id          = $request['user_id'];
-                    $like->suggest_id       = $request['suggest_id'];
-                    $like->save();
-                    $msg = $request['lang'] == 'ar' ? ' تم الاعجاب.' : ' sucessfull liked.';
-                    publisher_log(
-                        $request['user_id'],
-                        ' لقد قمت  بالاعجاب ل '.$like->suggest->publisher->display_name,
-                        'you do the like for'.$like->suggest->publisher->display_name
-                    );
-                }
-
-                return response()->json(
-                    [
-                        'status' => true,
-                        'data'   => ['likes'=>['id'=>null]],
-                        'msg'    =>$msg
-                    ]
+            $like = Like::where('suggest_id', $request['suggest_id'])
+                ->where('user_id', $request['user_id'])->first();
+            if ($like) {
+                $msg = $request['lang'] == 'ar' ? ' تم حذف الاعجاب.' : ' sucessfull delete liked.';
+                $suugest = Suggest::find($request['suggest_id']);
+                $suugest->publisher->notify(new LikeNotify
+                    (
+                        $suugest->publisher,
+                        "suggest",
+                        $suugest->id,
+                        $like
+                    )
                 );
+                publisher_log(
+                    $request['user_id'],
+                    ' لقد قمت بحذف الاعجاب ل ' . $like->suggest->publisher->display_name,
+                    'you delete the like for' . $like->suggest->publisher->display_name
+                );
+                $like->delete();
+            } else {
+                $like = new Like;
+                $like->user_id = $request['user_id'];
+                $like->suggest_id = $request['suggest_id'];
+                $like->save();
+                $msg = $request['lang'] == 'ar' ? ' تم الاعجاب.' : ' sucessfull liked.';
+                publisher_log(
+                    $request['user_id'],
+                    ' لقد قمت  بالاعجاب ل ' . $like->suggest->publisher->display_name,
+                    'you do the like for' . $like->suggest->publisher->display_name
+                );
+            }
+
+            return response()->json(
+                [
+                    'status' => true,
+                    'data' => ['likes' => ['id' => null]],
+                    'msg' => $msg
+                ]
+            );
 
 
-        }else{
-            foreach ((array)$validator->errors() as $key => $value){
-                foreach ($value as $msg){
+        } else {
+            foreach ((array)$validator->errors() as $key => $value) {
+                foreach ($value as $msg) {
                     return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
@@ -600,76 +660,31 @@ class SuggestController extends Controller
     }
 
     // list like
-    public function getLikes(Request $request){
+    public function getLikes(Request $request)
+    {
 
-        $validator=Validator::make($request->all(),[
-            'suggest_id'     => 'required|exists:suggests,id',
-            'user_id'        => 'required|exists:publishers,id',
+        $validator = Validator::make($request->all(), [
+            'suggest_id' => 'required|exists:suggests,id',
+            'user_id' => 'required|exists:publishers,id',
         ]);
 
         if ($validator->passes()) {
-            $suggest                = Suggest::find($request['suggest_id']);
+            $suggest = Suggest::find($request['suggest_id']);
 
             // check privacy
-                $data  = $suggest->likes->map(function ($like){
-                    return $this->responseLike($like);
-                }) ;
-                return response()->json(
-                    [
-                        'status' => true,
-                        'data'   =>['likes'=> $data],
-                        'msg'    =>""
-                    ]
-                );
-        }else{
-            foreach ((array)$validator->errors() as $key => $value){
-                foreach ($value as $msg){
-                    return response()->json(['status' => false, 'msg' => $msg[0]]);
-                }
-            }
-        }
-    }
-
-
-
-    //=========================================
-    public  function nearSuggest(Request $request){
-        $validator = Validator::make($request->all(),
-            [
-                'lat'                 => 'required',
-                'lng'                 => 'required',
-                'distance'            => 'nullable',
-                'type'                => 'nullable|in:k,m'
-            ]);
-
-        if ($validator->passes()) {
-            $lat        = $request['lat'];
-            $lng        = $request['lng'];
-            $disance    = is_null($request['distance'])?5:(int)$request['distance'];
-            $type        = 6371;
-            if($request['type']=='m')
-                $type  = 3959;
-            $query = "SELECT id 
-                    , ( $type * acos ( cos ( radians(". $lat .") ) * cos( radians( lat ) ) * cos( radians( lng ) - radians(".  $lng .") ) + sin ( radians(". $lat .") ) * sin( radians( lat ) ) ) )
-                     AS `distance` FROM `suggests`  HAVING distance <= $disance ";
-            $ids          =  collect(\DB::select($query))->pluck('id')->toArray();
-
-            $storePlaces  =  Suggest::whereIn('id', $ids)->get();
-
-            $unit         = $request['type'];
-            $data         = $storePlaces->map(function ($place) use ($lat, $lng ,$unit){
-                return $this->responsNear($place,$lat, $lng, $unit);
+            $data = $suggest->likes->map(function ($like) {
+                return $this->responseLike($like);
             });
             return response()->json(
                 [
                     'status' => true,
-                    'data'  => ["near"=>$data],
-                    'msg'   => ""
+                    'data' => ['likes' => $data],
+                    'msg' => ""
                 ]
             );
-        }else{
-            foreach ((array)$validator->errors() as $key => $value){
-                foreach ($value as $msg){
+        } else {
+            foreach ((array)$validator->errors() as $key => $value) {
+                foreach ($value as $msg) {
                     return response()->json(['status' => false, 'msg' => $msg[0]]);
                 }
             }
@@ -677,33 +692,50 @@ class SuggestController extends Controller
     }
 
 
+    //=========================================
+    public function nearSuggest(Request $request)
+    {
+        $validator = Validator::make($request->all(),
+            [
+                'lat' => 'required',
+                'lng' => 'required',
+                'distance' => 'nullable',
+                'type' => 'nullable|in:k,m'
+            ]);
 
+        if ($validator->passes()) {
+            $lat = $request['lat'];
+            $lng = $request['lng'];
+            $disance = is_null($request['distance']) ? 5 : (int)$request['distance'];
+            $type = 6371;
+            if ($request['type'] == 'm')
+                $type = 3959;
+            $query = "SELECT id 
+                    , ( $type * acos ( cos ( radians(" . $lat . ") ) * cos( radians( lat ) ) * cos( radians( lng ) - radians(" . $lng . ") ) + sin ( radians(" . $lat . ") ) * sin( radians( lat ) ) ) )
+                     AS `distance` FROM `suggests`  HAVING distance <= $disance ";
+            $ids = collect(\DB::select($query))->pluck('id')->toArray();
 
+            $storePlaces = Suggest::whereIn('id', $ids)->get();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            $unit = $request['type'];
+            $data = $storePlaces->map(function ($place) use ($lat, $lng, $unit) {
+                return $this->responsNear($place, $lat, $lng, $unit);
+            });
+            return response()->json(
+                [
+                    'status' => true,
+                    'data' => ["near" => $data],
+                    'msg' => ""
+                ]
+            );
+        } else {
+            foreach ((array)$validator->errors() as $key => $value) {
+                foreach ($value as $msg) {
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
 
 
 }

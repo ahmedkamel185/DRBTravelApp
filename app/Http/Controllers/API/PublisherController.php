@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Models\Store;
 use function foo\func;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -13,6 +14,7 @@ use App\Models\Publishing;
 use App\Models\Block;
 use App\Models\Follower;
 use App\Models\Favourit;
+use App\Models\LogActivity;
 use File;
 use Illuminate\Support\Str;
 use App\Notifications\Follow as FollowNotify;
@@ -131,6 +133,36 @@ class PublisherController extends Controller
         $res['created_at'] = strtotime($notify->created_at) * 1000;
         $res['readed_at'] = is_null($notify->read_at) ? "" : $notify->read_at->format('d-m-Y h:i a');
         return $res;
+    }
+
+    protected function responseStore($user, $type=2)
+    {
+        $res["id"]              = $user->id;
+        $res["store_name"]      = $user->store_name;
+        $res["mobile"]          = $user->mobile;
+        $res["email"]           = $user->email;
+        $res["city"]            = $user->city;
+        $image                  = is_null($user['image'])? "default_image.png" : $user['image'];
+        $res['image']           = asset('uploads/publishers') . '/' . $image;
+        $res['status']          = is_null($user['status'])?1:$user['status'];
+        $res['verified']        = is_null($user['verified'])?1:$user['verified'];
+        $res['type']            = $type;
+        $res['storeType']       = $this->responseStoreType($user->StoreType);
+        $res['notification_count']= $user->unreadNotifications()->count();
+        return $res;
+    }
+
+
+    // save logs
+    public  function save_log($publisher_id, $action_id, $type, $status)
+    {
+        $log = new LogActivity;
+        $log->publisher_id = $publisher_id;
+        $log->action_id = $action_id;
+        $log->type = $type;
+        $log->status = $status;
+
+        $log->save();
     }
     /*===========================*/
 
@@ -365,6 +397,40 @@ class PublisherController extends Controller
 
     }
 
+
+    // update profile
+    public function updateToken(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:publishers,id',
+            'device_id' => 'required',
+            'device_type' => 'required',
+        ]);
+
+        if ($validator->passes()) {
+
+            $user = User::find($request['user_id']);
+            $user->device_id = $request['device_id'];
+            $user->device_type = $request['device_type'];
+
+            $user->save();
+            $msg = $request['lang'] == 'ar' ? 'تم تعديل الحساب' : 'account update .';
+            return response()->json(
+                ['status' => true, 'msg' => $msg]
+            );
+
+
+        } else {
+            foreach ((array)$validator->errors() as $key => $value) {
+                foreach ($value as $msg) {
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+
+    }
+
+
     //change user password
     public function changePassword(Request $request)
     {
@@ -524,6 +590,18 @@ class PublisherController extends Controller
             if ($block) {
                 $block->delete();
                 $msg = $lang == "ar" ? "تم حذف الحظر بنجاح" : "sucessfull delete blocked";
+
+
+                $this->save_log(
+                    $request['user_id'],
+                    $request['publisher_id'],
+                    'UNBLOCK',
+                    'publisher'
+                );
+
+
+
+
             } else {
                 $block = new Block;
                 $block->user_id = $request['user_id'];
@@ -546,17 +624,17 @@ class PublisherController extends Controller
                         ->where('follower_id', $request['user_id']);
                 })->delete();
 
-                // remove share to other
+        /*        // remove share to other
                 Publishing::where(function ($query) use ($request) {
                     $query->where('publisher_id', $request['user_id'])
                         ->where('sharer_id', $request['publisher_id']);
                 })->orWhere(function ($query) use ($request) {
                     $query->where('publisher_id', $request['publisher_id'])
                         ->where('sharer_id', $request['user_id']);
-                })->delete();
+                })->delete();*/
                 /*---- publishing ---- */
                 // reomve like
-                // reomver like user
+          /*      // reomver like user
                 Like::where("user_id", $request['user_id'])
                     ->whereHas('publishing', function ($q) use ($request) {
                         $q->where('publisher_id', $request['publisher_id'])
@@ -568,11 +646,11 @@ class PublisherController extends Controller
                     ->whereHas('publishing', function ($q) use ($request) {
                         $q->where('publisher_id', $request['user_id'])
                             ->orWhere('sharer_id', $request['user_id']);
-                    })->delete();
+                    })->delete();*/
 
                 // reomve comment
                 // reomver comment user
-                Comment::where("user_id", $request['user_id'])
+              /*  Comment::where("user_id", $request['user_id'])
                     ->whereHas('publishing', function ($q) use ($request) {
                         $q->where('publisher_id', $request['publisher_id'])
                             ->orWhere('sharer_id', $request['publisher_id']);
@@ -585,7 +663,7 @@ class PublisherController extends Controller
                             ->orWhere('sharer_id', $request['user_id']);
                     })->delete();
 
-                /*----- suggest --- */
+                /*----- suggest ---  
                 // remove user like to publiser
                 LikeSuggest::where("user_id", $request['user_id'])
                     ->whereHas('suggest', function ($q) use ($request) {
@@ -608,15 +686,17 @@ class PublisherController extends Controller
                 CommentSuggest::where("user_id", $request['publisher_id'])
                     ->whereHas('suggest', function ($q) use ($request) {
                         $q->where('user_id', $request['user_id']);
-                    })->delete();
+                    })->delete();*/
 
 
                 $msg = $lang == "ar" ? "تم  الحظر بنجاح" : "sucessfull blocked";
-                publisher_log(
+                $this->save_log(
                     $request['user_id'],
-                    ' لقد قمت بحظر  ' . $block->publisher->display_name,
-                    'you  blocked ' . $block->publisher->display_name
+                    $request['publisher_id'],
+                    'BLOCK',
+                    'publisher'
                 );
+
             }
 
             return response()->json(['status' => true, 'data' =>  ['trip' => ['id' => null]], 'msg' => $msg]);
@@ -674,6 +754,15 @@ class PublisherController extends Controller
             if ($follow) {
                 $follow->delete();
                 $msg = $lang == "ar" ? "تم حذف التتبع بنجاح" : "sucessfull delete follow";
+
+                $this->save_log(
+                    $request['user_id'],
+                    $request['publisher_id'],
+                    'UNFOLLOW',
+                    'publisher'
+                );
+
+
             } else {
                 $follow = new Follower;
                 $follow->follower_id = $request['user_id'];
@@ -683,11 +772,16 @@ class PublisherController extends Controller
                 $followUser = User::find($request['publisher_id']);
                 $followerUser = User::find($request['user_id']);
                 $followUser->notify(new FollowNotify($followUser, $followerUser));
-                publisher_log(
+
+
+                $this->save_log(
                     $request['user_id'],
-                    ' لقد قمت تتبع  ' . $follow->follow->display_name,
-                    'you  follow  ' . $follow->follow->display_name
+                    $request['publisher_id'],
+                    'FOLLOW',
+                    'publisher'
                 );
+
+
             }
 
             return response()->json(['status' => true, 'data' => ["trip" => ['id' => null]], 'msg' => $msg]);
@@ -862,89 +956,179 @@ class PublisherController extends Controller
     // reset mail
     public function restPasswordMail(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'email' => "required|email|exists:publishers,email",
-        ]);
 
-        if ($validator->passes()) {
-            $lang = $request['lang'];
-            $user = User::where('email', $request['email'])->first();
-            $user->temporay_password = Str::random(10);
-            $user->update();
-            \Mail::to($user)->send(new  \App\Mail\ResetPassword($user->username, $user->temporay_password));
-            $msg = $lang == "ar" ? "تم ارسال الميل " : "sucessfull send mail ";
-            return response()->json(['status' => true, 'data' => ["password" => ['temp' => $user->temporay_password]], 'msg' => $msg]);
-        } else {
-            foreach ((array)$validator->errors() as $key => $value) {
-                foreach ($value as $msg) {
-                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+        if(isset($request->store))
+        {
+            $validator = Validator::make($request->all(), [
+                'email' => "required|email|exists:stores,email",
+            ]);
+
+            if ($validator->passes()) {
+                $lang = $request['lang'];
+                $store = Store::where('email', $request['email'])->first();
+                $store->temporay_password = Str::random(6);
+                $store->update();
+                \Mail::to($store)->send(new  \App\Mail\ResetPassword($store->store_name, $store->temporay_password));
+                $msg = $lang == "ar" ? "تم ارسال الميل " : "sucessfull send mail ";
+                return response()->json(['status' => true, 'data' => ["password" => ['temp' => $store->temporay_password]], 'msg' => $msg]);
+            } else {
+                foreach ((array)$validator->errors() as $key => $value) {
+                    foreach ($value as $msg) {
+                        return response()->json(['status' => false, 'msg' => $msg[0]]);
+                    }
                 }
             }
         }
+        else
+
+        {
+            $validator = Validator::make($request->all(), [
+                'email' => "required|email|exists:publishers,email",
+            ]);
+
+            if ($validator->passes()) {
+                $lang = $request['lang'];
+                $user = User::where('email', $request['email'])->first();
+                $user->temporay_password = Str::random(6);
+                $user->update();
+                \Mail::to($user)->send(new  \App\Mail\ResetPassword($user->username, $user->temporay_password));
+                $msg = $lang == "ar" ? "تم ارسال الميل " : "sucessfull send mail ";
+                return response()->json(['status' => true, 'data' => ["password" => ['temp' => $user->temporay_password]], 'msg' => $msg]);
+            } else {
+                foreach ((array)$validator->errors() as $key => $value) {
+                    foreach ($value as $msg) {
+                        return response()->json(['status' => false, 'msg' => $msg[0]]);
+                    }
+                }
+            }
+        }
+
     }
-
-
 
 
     // check code whic send
     public function checkTemploaryPassword(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'email' => "required|email|exists:publishers,email",
-            'temp_password' => "required"
-        ]);
 
-        if ($validator->passes()) {
-            $lang = $request['lang'];
-            $user = User::where('email', $request['email'])->first();
-            if ($user->temporay_password != $request['temp_password']) {
-                $msg = $lang == "ar" ? "كود الدخول الموقت غير صحيح" : "temporary code for login not success";
-                return response()->json(['status' => false, 'data' => ["publisher" => ['temp' => ""]], 'msg' => $msg]);
-            }
+        if(isset($request->store))
+        {
+            $validator = Validator::make($request->all(), [
+                'email' => "required|email|exists:stores,email",
+                'temp_password' => "required"
+            ]);
 
-            $msg = $lang == "ar" ? "تم التاكد يرجع تغير الرقم السرى" : "successfully verifed user pleaze change passowrd";
-            return response()->json(['status' => true, 'data' => ["publisher" => $this->responsePublisherUser($user)], 'msg' => $msg]);
-        } else {
-            foreach ((array)$validator->errors() as $key => $value) {
-                foreach ($value as $msg) {
-                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+            if ($validator->passes()) {
+                $lang = $request['lang'];
+                $store = Store::where('email', $request['email'])->first();
+                if ($store->temporay_password != $request['temp_password']) {
+                    $msg = $lang == "ar" ? "كود الدخول الموقت غير صحيح" : "temporary code for login not success";
+                    return response()->json(['status' => false, 'data' => ["store" => ['temp' => ""]], 'msg' => $msg]);
+                }
+
+                $msg = $lang == "ar" ? "تم التاكد يرجع تغير الرقم السرى" : "successfully verifed user pleaze change passowrd";
+                return response()->json(['status' => true, 'data' => ["store" => $this->res($store)], 'msg' => $msg]);
+            } else {
+                foreach ((array)$validator->errors() as $key => $value) {
+                    foreach ($value as $msg) {
+                        return response()->json(['status' => false, 'msg' => $msg[0]]);
+                    }
                 }
             }
         }
+        else {
+            $validator = Validator::make($request->all(), [
+                'email' => "required|email|exists:publishers,email",
+                'temp_password' => "required"
+            ]);
+
+            if ($validator->passes()) {
+                $lang = $request['lang'];
+                $user = User::where('email', $request['email'])->first();
+                if ($user->temporay_password != $request['temp_password']) {
+                    $msg = $lang == "ar" ? "كود الدخول الموقت غير صحيح" : "temporary code for login not success";
+                    return response()->json(['status' => false, 'data' => ["publisher" => ['temp' => ""]], 'msg' => $msg]);
+                }
+
+                $msg = $lang == "ar" ? "تم التاكد يرجع تغير الرقم السرى" : "successfully verifed user pleaze change passowrd";
+                return response()->json(['status' => true, 'data' => ["publisher" => $this->responsePublisherUser($user)], 'msg' => $msg]);
+            } else {
+                foreach ((array)$validator->errors() as $key => $value) {
+                    foreach ($value as $msg) {
+                        return response()->json(['status' => false, 'msg' => $msg[0]]);
+                    }
+                }
+            }
+        }
+
     }
 
     // reset-password
     public function resetPassword(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'user_id' => "required|exists:publishers,id",
-            'password' => "required|min:6|max:190"
-        ]);
 
-        if ($validator->passes()) {
-            $lang = $request['lang'];
-            $user = User::find($request['user_id']);
-            if (is_null($user->temporay_password)) {
-                $msg = $lang == "ar" ? "كود الدخول لم يتم ارساله" : "tempory code not send";
-                return response()->json(['status' => false, 'data' => ["password" => ['temp' => null]], 'msg' => $msg]);
-            }
-            $user->password = bcrypt(convert2english($request['password']));
-            $user->temporay_password = null;
-            $user->update();
-            publisher_log(
-                $request['user_id'],
-                ' لقد قمت تغير كلمة المرور  ',
-                'you change the password'
-            );
-            $msg = $lang == "ar" ? "تم تغير كلمة المرور" : "change the password sucessfull";
-            return response()->json(['status' => true, 'data' => ["password" => ['id' => null]], 'msg' => $msg]);
-        } else {
-            foreach ((array)$validator->errors() as $key => $value) {
-                foreach ($value as $msg) {
-                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+
+
+        if(isset($request->store))
+        {
+            $validator = Validator::make($request->all(), [
+                'user_id' => "required|exists:stores,id",
+                'password' => "required|min:6|max:190"
+            ]);
+
+            if ($validator->passes()) {
+                $lang = $request['lang'];
+                $store = Store::find($request['user_id']);
+                if (is_null($store->temporay_password)) {
+                    $msg = $lang == "ar" ? "كود الدخول لم يتم ارساله" : "tempory code not send";
+                    return response()->json(['status' => false, 'msg' => $msg]);
+                }
+                $store->password = bcrypt(convert2english($request['password']));
+                $store->temporay_password = null;
+                $store->update();
+
+                $msg = $lang == "ar" ? "تم تغير كلمة المرور" : "change the password sucessfull";
+                return response()->json(['status' => true , 'msg' => $msg]);
+            } else {
+                foreach ((array)$validator->errors() as $key => $value) {
+                    foreach ($value as $msg) {
+                        return response()->json(['status' => false, 'msg' => $msg[0]]);
+                    }
                 }
             }
         }
+        else {
+            $validator = Validator::make($request->all(), [
+                'user_id' => "required|exists:publishers,id",
+                'password' => "required|min:6|max:190"
+            ]);
+
+            if ($validator->passes()) {
+                $lang = $request['lang'];
+                $user = User::find($request['user_id']);
+                if (is_null($user->temporay_password)) {
+                    $msg = $lang == "ar" ? "كود الدخول لم يتم ارساله" : "tempory code not send";
+                    return response()->json(['status' => false, 'data' => ["password" => ['temp' => null]], 'msg' => $msg]);
+                }
+                $user->password = bcrypt(convert2english($request['password']));
+                $user->temporay_password = null;
+                $user->update();
+                publisher_log(
+                    $request['user_id'],
+                    ' لقد قمت تغير كلمة المرور  ',
+                    'you change the password'
+                );
+                $msg = $lang == "ar" ? "تم تغير كلمة المرور" : "change the password sucessfull";
+                return response()->json(['status' => true, 'data' => ["password" => ['id' => null]], 'msg' => $msg]);
+            } else {
+                foreach ((array)$validator->errors() as $key => $value) {
+                    foreach ($value as $msg) {
+                        return response()->json(['status' => false, 'msg' => $msg[0]]);
+                    }
+                }
+            }
+        }
+
+
     }
 
 

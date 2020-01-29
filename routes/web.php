@@ -11,7 +11,11 @@
 |
 */
 
-Route::get('/','adminController@home');
+Route::get('/admin','adminController@home');
+
+Route::get("/", "WelcomeController@index");
+
+Route::get("/ar", "WelcomeController@arIndex");
 
 //Auth::routes();
 

@@ -22,6 +22,12 @@ class Follower extends Model
         return $this->belongsTo('App\Models\Publisher','follower_id','id');
     }
 
+    // spots
+    public function spots()
+    {
+        return $this->hasMany("App\Models\Spot", "publisher_id");
+    }
+
     // get blocked id for user
     static function buldFollowerId($follow_id)
     {

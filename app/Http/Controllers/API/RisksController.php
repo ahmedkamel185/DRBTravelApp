@@ -137,6 +137,61 @@ class RisksController extends Controller
             }
         }
     }
+
+
+    public function addRisk_without_image(Request $request)
+    {
+        $validator = Validator::make($request->all(),
+            [
+                "lat"                 => 'required',
+                'lng'                 => 'required',
+                'address'             => 'required|min:2|max:190',
+                'desc'                => 'required',
+                'publisher_id'        => 'required|exists:publishers,id',
+                'risk_type_id'        => 'required|exists:risk_types,id',
+                
+
+            ]);
+
+        if ($validator->passes()){
+            $risk                       = new Risk;
+            $risk->lat                  = $request['lat'];
+            $risk->lng                  = $request['lng'];
+            $risk->address              = $request['address'];
+            $risk->publisher_id         = $request['publisher_id'];
+            $risk->risk_type_id         = $request['risk_type_id'] ;
+            $risk->image = 'null';
+
+            if ($request['desc']) {
+                $risk->desc                 = $request['desc'];
+            }
+            else
+            {
+                $risk->desc                 = 'null';
+            }
+
+
+
+            $risk->save();
+            $msg = $request['lang'] == 'ar' ? ' تم اضافه خطر جديد.' : ' danger is added successfully.';
+            return response()->json(
+                [
+
+                    'status' => true,
+                    'data' => ['risk'=>$this->responseRisk($risk)],
+                    'msg'=>$msg
+                ]
+            );
+        }else{
+            foreach ((array)$validator->errors() as $key => $value){
+                foreach ($value as $msg){
+                    return response()->json(['status' => false, 'msg' => $msg[0]]);
+                }
+            }
+        }
+    }
+    
+    
     //============================================//
     //show all risks
 

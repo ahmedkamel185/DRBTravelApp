@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
-header("Connection: Keep-alive");
+//header("Connection: Keep-alive");
 
 /*
 |--------------------------------------------------------------------------
@@ -38,6 +38,8 @@ Route::group( [
     Route::post('get','PublisherController@getUser');
 
     Route::post('update-profile', 'PublisherController@updateProfile');
+
+    Route::post('update-token', 'PublisherController@updateToken');
 
     Route::post('change-password', 'PublisherController@changePassword');
 
@@ -173,6 +175,8 @@ Route::group( [
 
     Route::post('add-suggest','SuggestController@addSuugest');
 
+    Route::post('add-suggest-without-image','SuggestController@suggest_without_image');
+
     Route::post('edit-suggest','SuggestController@editSuugest');
 
     Route::post('delte-suggest','SuggestController@delteSuugest');
@@ -257,6 +261,8 @@ Route::group( [
     ]
 ], function()
 {
+
+
     Route::post('start-trip', 'TripController@startTrip');
 
     Route::post('get-trip', 'TripController@getTrip');
@@ -268,6 +274,49 @@ Route::group( [
     Route::post('delete-trip', 'TripController@deleteTrip');
 
     Route::post('update-trip', 'TripController@updateTrip');
+
+    Route::post('create-spot', 'TripController@createSpot');
+
+    Route::post('update-spot', 'TripController@updateSpot');
+
+    Route::post('delete-spot', 'TripController@deleteSpot');
+
+    Route::post('get-spots', 'TripController@getSpots');
+
+
+    Route::post('get-spot', 'TripController@getSpot');
+
+    Route::post('get-spots-count', 'TripController@getSpotsCount');
+
+    Route::post('searched-spots', 'TripController@SearchedSpots');
+
+    Route::post('search-query', 'TripController@multipleSearch');
+
+    Route::post('get-user', 'TripController@userProfile');
+
+    Route::post('get-user-spots', 'TripController@getUserSpots');
+
+    Route::post('like-spot', 'TripController@likeSpot');
+
+    Route::post('add-comment', 'TripController@addComment');
+
+    Route::post('update-spot-comment', 'TripController@updateSpotComment');
+
+    Route::post('delete-spot-comment', 'TripController@deleteSpotComment');
+
+    Route::post('get-spot-comments', 'TripController@getSpotComments');
+
+    Route::post('favourite-add', 'TripController@addToFavourite');
+
+    Route::post('follows-spots', 'TripController@followsSpots');
+
+    Route::post('favourite-spots', 'TripController@favouriteSpots');
+
+    Route::post('tags-search', 'TripController@tagsSearch');
+
+    Route::post('create-journey', 'TripController@createJourney');
+
+    Route::post('get-journeys', 'TripController@getJourneys');
 
     Route::post('change-descTrip', 'TripController@changeDescTrip');
 
@@ -317,7 +366,7 @@ Route::group( [
 
     Route::post('list-trips', 'TripController@getPublishingUser');
 
-    Route::get('test', 'TripController@test');
+    Route::post('test', 'TripController@test');
 
 });
 
@@ -339,6 +388,8 @@ Route::group( [
 ], function()
 {
     Route::post('add-risks','RisksController@addRisk');
+
+    Route::post('add-risks-without-image','RisksController@addRisk_without_image');
 
     Route::post('show-risks','RisksController@showRisks');
 

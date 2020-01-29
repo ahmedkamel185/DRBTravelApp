@@ -111,8 +111,8 @@ function send_FCM ($user, $data)
     $dataBuilder->addData($datum);
     $option = $optionBuilder->build();
     $datum = $dataBuilder->build();
-    $notification = $user->dviceType == 'ios' ? $notificationBuilder->build() : null;
-    if($user->dviceType == 'ios'){
+    $notification = $user->device_type == 'ios' ? $notificationBuilder->build() : null;
+    if($user->device_type == 'ios'){
         $downstreamResponse = \FCM::sendTo($tokens, $option, $notification, $datum);
     }else{
         $downstreamResponse = \FCM::sendTo($tokens, $option, null, $datum);
@@ -122,6 +122,7 @@ function send_FCM ($user, $data)
     $downstreamResponse->numberSuccess();
     $downstreamResponse->numberFailure();
     $downstreamResponse->numberModification();
+
 //    dd($downstreamResponse);
 }
 
